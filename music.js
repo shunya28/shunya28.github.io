@@ -1,5 +1,5 @@
 async function loadSongs() {
-  const paths = await (await fetch('songs/index.json')).json();
+  const paths = await (await fetch('music-metadata/index.json')).json();
   const songs = await Promise.all(paths.map(p => fetch(p).then(r => r.json())));
   return songs;
 }
