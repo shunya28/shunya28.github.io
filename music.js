@@ -11,7 +11,7 @@ function renderList(songs) {
       <h3>${s.title}</h3>
       <audio controls src="${s.audio_url}"></audio>
       <p>ID: ${s.id}</p>
-      <p>Composed: ${s.composed_at ?? '—'}</p>
+      <p>Composed: ${s.release_date ?? '—'}</p>
       <p>Tags: ${(s.tags||[]).map(t=>`<span class="tag">${t}</span>`).join(' ') || '—'}</p>
     </article>
   `).join('');
