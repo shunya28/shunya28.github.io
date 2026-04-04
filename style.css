@@ -10,9 +10,10 @@ body {
     }
 }
 
-h2 {
+h2, summary {
     font-size: 1.2rem;
     margin-bottom: 1rem;
+    font-weight: bold;
 }
 
 section {
