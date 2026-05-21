@@ -5,34 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Circle of Just Intervals</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      -webkit-text-size-adjust: 100%;
-    }
-
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #fff;
       color: #111;
     }
-
     .app {
       width: min(100%, 1500px);
       margin: 24px auto;
       padding: 0 clamp(10px, 2vw, 18px);
     }
-
     h1 {
       margin: 0 0 8px;
       font-size: clamp(20px, 3.8vw, 28px);
       font-weight: 650;
       text-align: center;
     }
-
     .note {
       margin: 0 auto 12px;
       max-width: 1050px;
@@ -41,7 +32,6 @@
       color: #444;
       line-height: 1.6;
     }
-
     .controls {
       display: flex;
       justify-content: center;
@@ -52,17 +42,12 @@
       font-size: 14px;
       color: #222;
     }
-
     .controls input,
     .controls select {
       padding: 4px 6px;
       font-size: 14px;
     }
-
-    .controls input {
-      width: 120px;
-    }
-
+    .controls input[type="number"] { width: 120px; }
     .visual-layout {
       display: flex;
       align-items: flex-start;
@@ -70,7 +55,6 @@
       gap: 24px;
       width: 100%;
     }
-
     .chart-panel {
       flex: 1 1 820px;
       min-width: 0;
@@ -84,7 +68,6 @@
       touch-action: none;
       overscroll-behavior: contain;
     }
-
     svg {
       display: block;
       width: min(100%, 860px);
@@ -98,25 +81,21 @@
       touch-action: none;
       outline: none;
     }
-
     .side-panel {
       flex: 0 0 300px;
       max-width: 320px;
       font-size: 14px;
     }
-
     .side-title {
       margin: 0 0 8px;
       font-size: 16px;
       font-weight: 650;
     }
-
     .legend-list {
       display: grid;
       gap: 5px;
       margin-bottom: 22px;
     }
-
     .legend-item {
       display: flex;
       align-items: center;
@@ -124,70 +103,51 @@
       line-height: 1.3;
       white-space: nowrap;
     }
-
     .legend-dot {
       width: 11px;
       height: 11px;
       border-radius: 50%;
       flex: 0 0 11px;
     }
-
     .selected-info {
       line-height: 1.5;
       word-break: break-word;
       color: #222;
       min-height: 8em;
     }
-
-    .selected-info div {
-      margin: 0 0 3px;
-    }
-
-    .play-target:hover {
-      cursor: pointer;
-    }
-
+    .selected-info div { margin: 0 0 3px; }
+    .play-target:hover { cursor: pointer; }
+    .muted-label { color: #555; }
     @media (max-width: 850px) {
       .app {
         margin: 16px auto;
         padding: 0 10px;
       }
-
-      .note {
-        font-size: 13px;
-      }
-
+      .note { font-size: 13px; }
       .visual-layout {
         flex-direction: column;
         align-items: stretch;
         gap: 14px;
       }
-
       .chart-panel {
         width: 100%;
         flex: none;
       }
-
       svg {
         width: 100%;
         max-width: 100%;
       }
-
       .side-panel {
         flex: none;
         width: 100%;
         max-width: none;
       }
-
       .legend-list {
         grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
         column-gap: 12px;
         row-gap: 6px;
       }
-
-      .legend-item {
-        white-space: normal;
-      }
+      .legend-item { white-space: normal; }
     }
   </style>
 </head>
@@ -197,17 +157,20 @@
 
     <p class="note">
       This app visualizes just intervals whose frequency ratios can be written as integer pairs <code>m:n</code>.
-      Each mark starts from a lattice point <code>(u,v)</code> with <code>u >= 0</code>, <code>v >= 0</code>, and <code>r = sqrt(u^2+v^2) <= 30</code>.
+      Each mark starts from a lattice point <code>(u,v)</code> with <code>u &gt;= 0</code>, <code>v &gt;= 0</code>, and <code>r = sqrt(u^2+v^2) &lt;= 30</code>.
       The lattice point is converted to the frequency ratio by <code>m = u + v</code> and <code>n = u + 2v</code>.
       To form the circular layout, the app writes <code>(u,v) = (r cosθ, r sinθ)</code> and maps the angle to <code>4θ</code>, so the displayed position is <code>(x,y) = (r cos 4θ, r sin 4θ)</code>.
       Click or drag on the plot to hear the base frequency together with the interval tone.
       For gray circles, a lighter color indicates greater harmonic complexity, measured by Benedetti height (Tenny norm).
+      The colored background is controlled by von Mises densities centered at the colored interval-class angles; larger <code>κ</code> makes each colored region more concentrated.
     </p>
 
     <div class="controls">
       <label for="base-frequency">Base frequency</label>
       <input id="base-frequency" type="number" min="1" step="0.01" value="261.63" inputmode="decimal" />
       <span>Hz</span>
+      <label for="kappa-input">κ</label>
+      <input id="kappa-input" type="number" min="0" step="0.1" value="150.0" inputmode="decimal" />
       <label for="waveform-select">Timbre</label>
       <select id="waveform-select">
         <option value="sine">Sine</option>
@@ -248,13 +211,13 @@
       { semitones: 8,  name: "m6", ratioText: "5:8",   m: 5,  n: 8  },
       { semitones: 9,  name: "M6", ratioText: "3:5",   m: 3,  n: 5  },
       { semitones: 10, name: "m7", ratioText: "5:9",   m: 5,  n: 9  },
-      { semitones: 11, name: "M7", ratioText: "8:15",  m: 8,  n: 15 },
+      { semitones: 11, name: "M7", ratioText: "8:15",  m: 8,  n: 15 }
     ];
 
     const colors = [
-      "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
-      "#9467bd", "#8c564b", "#e377c2", "#c49c06",
-      "#bcbd22", "#17becf", "#aec7e8", "#ffbb78",
+      "#1f77b4", 
+      "#9467bd",  "#aec7e8", "#8c564b", "#d62728", "#2ca02c", "#bcbd22", "#ff7f0e", "#c49c06",
+      "#17becf", "#ffbb78", "#e377c2"
     ];
 
     const svg = document.getElementById("chart");
@@ -262,6 +225,7 @@
     const selectedInfo = document.getElementById("selected-info");
     const legendList = document.getElementById("legend-list");
     const baseFrequencyInput = document.getElementById("base-frequency");
+    const kappaInput = document.getElementById("kappa-input");
     const waveformSelect = document.getElementById("waveform-select");
 
     const W = 900;
@@ -275,12 +239,6 @@
     const yMin = -xyMax;
     const yMax = xyMax;
 
-    let audioCtx = null;
-    let active = null;
-    let pointerIsDown = false;
-    let interactionToken = 0;
-    let capturedPointerId = null;
-
     function sx(x) {
       return plotLeft + ((x - xMin) / (xMax - xMin)) * plotSize;
     }
@@ -288,6 +246,14 @@
     function sy(y) {
       return plotTop + plotSize - ((y - yMin) / (yMax - yMin)) * plotSize;
     }
+
+    const circleRadiusPx = sx(rMax) - sx(0);
+
+    let audioCtx = null;
+    let active = null;
+    let pointerIsDown = false;
+    let interactionToken = 0;
+    let capturedPointerId = null;
 
     function gcd(a, b) {
       a = Math.round(a);
@@ -321,13 +287,9 @@
       return { m: m / g, n: n / g, g };
     }
 
-    function benedettiHeight(m, n) {
-      const r = reducedPair(m, n);
-      return r.m * r.n;
-    }
-
     function tennyNormValue(m, n) {
-      return Math.log2(benedettiHeight(m, n));
+      const r = reducedPair(m, n);
+      return Math.log2(r.m * r.n);
     }
 
     function add(tag, attrs = {}, parent = svg) {
@@ -349,14 +311,17 @@
 
     function getBaseFrequencyHz() {
       const value = Number(baseFrequencyInput.value);
-      if (!Number.isFinite(value) || value <= 0) return defaultBaseHz;
-      return value;
+      return Number.isFinite(value) && value > 0 ? value : defaultBaseHz;
+    }
+
+    function getKappa() {
+      const value = Number(kappaInput.value);
+      return Number.isFinite(value) && value >= 0 ? value : 150.0;
     }
 
     function getWaveformType() {
       const value = waveformSelect.value;
-      if (["sine", "triangle", "square", "sawtooth"].includes(value)) return value;
-      return "sine";
+      return ["sine", "triangle", "square", "sawtooth"].includes(value) ? value : "sine";
     }
 
     function targetGainForWaveform() {
@@ -367,13 +332,41 @@
       return 0.075;
     }
 
+    function normalizeAngleRad(a) {
+      const twoPi = 2 * Math.PI;
+      let x = a % twoPi;
+      if (x < 0) x += twoPi;
+      return x;
+    }
+
+    function shortestAngleDifference(a, b) {
+      const twoPi = 2 * Math.PI;
+      let d = normalizeAngleRad(a - b);
+      if (d > Math.PI) d -= twoPi;
+      return d;
+    }
+
+    function principalThetaPrimeRadFromMN(m, n) {
+      const { u, v } = uvFromMN(m, n);
+      const theta = Math.atan2(v, u);
+      return normalizeAngleRad(4 * theta);
+    }
+
     const intervalByReducedRatio = new Map();
+    const intervalClassAngles = [];
     intervals.forEach((it, i) => {
       intervalByReducedRatio.set(`${it.m},${it.n}`, {
         color: colors[i],
         name: it.name,
         ratioText: it.ratioText,
         semitones: it.semitones
+      });
+      intervalClassAngles.push({
+        color: colors[i],
+        semitones: it.semitones,
+        name: it.name,
+        ratioText: it.ratioText,
+        mu: principalThetaPrimeRadFromMN(it.m, it.n)
       });
     });
 
@@ -382,11 +375,9 @@
       for (let v = 0; v <= rMax; v++) {
         if (u === 0 && v === 0) continue;
         if (Math.hypot(u, v) > rMax + 1e-9) continue;
-
         const { m, n } = mnFromUV(u, v);
         const reduced = reducedPair(m, n);
         if (reduced.m === 1 && reduced.n === 2) continue;
-
         const intervalInfo = intervalByReducedRatio.get(`${reduced.m},${reduced.n}`) || null;
         const warped = polarWarpUV(u, v);
         points.push({ u, v, m, n, reduced, intervalInfo, x: warped.x, y: warped.y });
@@ -419,7 +410,6 @@
     function nearestPointFromEvent(event) {
       const { x, y } = pointerToXY(event);
       if (Math.hypot(x, y) > rMax) return null;
-
       let nearest = null;
       let minDist2 = Infinity;
       for (const p of points) {
@@ -435,6 +425,7 @@
     }
 
     function drawLegend() {
+      legendList.replaceChildren();
       for (const [i, it] of intervals.entries()) {
         const item = addHtml("div", { class: "legend-item" }, legendList);
         addHtml("span", { class: "legend-dot", style: { backgroundColor: colors[i] } }, item);
@@ -447,15 +438,58 @@
       add("line", {
         x1: sx(x) - r, y1: sy(y) - r,
         x2: sx(x) + r, y2: sy(y) + r,
-        stroke, "stroke-width": strokeWidth,
-        "pointer-events": "none"
+        stroke, "stroke-width": strokeWidth, "pointer-events": "none"
       }, parent);
       add("line", {
         x1: sx(x) - r, y1: sy(y) + r,
         x2: sx(x) + r, y2: sy(y) - r,
-        stroke, "stroke-width": strokeWidth,
-        "pointer-events": "none"
+        stroke, "stroke-width": strokeWidth, "pointer-events": "none"
       }, parent);
+    }
+
+    function drawBackgroundVonMises(parent) {
+      const kappa = getKappa();
+      const steps = 240;
+      const maxAlpha = 0.24;
+      const minAlphaThreshold = 0.003;
+      const cx = sx(0);
+      const cy = sy(0);
+      const R = circleRadiusPx;
+      const angle0 = -Math.PI;
+      const dAngle = (2 * Math.PI) / steps;
+
+      const bgGroup = add("g", { id: "background-vonmises", "pointer-events": "none" }, parent);
+      for (const cls of intervalClassAngles) {
+        for (let i = 0; i < steps; i++) {
+          const a0 = angle0 + i * dAngle;
+          const a1 = a0 + dAngle;
+          const ac = 0.5 * (a0 + a1);
+          const diff = shortestAngleDifference(ac, cls.mu);
+          const normalizedDensity = Math.exp(kappa * (Math.cos(diff) - 1));
+          const alpha = maxAlpha * normalizedDensity;
+          if (alpha < minAlphaThreshold) continue;
+
+          const x0 = cx + R * Math.cos(a0);
+          const y0 = cy - R * Math.sin(a0);
+          const x1 = cx + R * Math.cos(a1);
+          const y1 = cy - R * Math.sin(a1);
+          const largeArc = dAngle > Math.PI ? 1 : 0;
+          const d = [
+            `M ${cx} ${cy}`,
+            `L ${x0} ${y0}`,
+            `A ${R} ${R} 0 ${largeArc} 0 ${x1} ${y1}`,
+            'Z'
+          ].join(' ');
+          add('path', {
+            d,
+            fill: cls.color,
+            'fill-opacity': alpha.toFixed(4),
+            stroke: 'none',
+            'pointer-events': 'none'
+          }, bgGroup);
+        }
+      }
+      return bgGroup;
     }
 
     function drawPoint(p, parentGroups) {
@@ -489,8 +523,10 @@
 
     function drawChart() {
       svg.replaceChildren();
+      stopSound();
 
       add("rect", { x: 0, y: 0, width: W, height: H, fill: "#fff", "pointer-events": "none" });
+      drawBackgroundVonMises(svg);
 
       add("rect", {
         x: sx(xMin), y: sy(yMax), width: plotSize, height: plotSize,
@@ -499,7 +535,7 @@
       });
 
       add("circle", {
-        cx: sx(0), cy: sy(0), r: sx(rMax) - sx(0),
+        cx: sx(0), cy: sy(0), r: circleRadiusPx,
         fill: "none", stroke: "#000", "stroke-width": 1.2,
         "pointer-events": "none"
       });
@@ -509,7 +545,7 @@
         fill: "#000", stroke: "none", "pointer-events": "none"
       });
 
-      const relationLine = add("line", {
+      add("line", {
         id: "relation-line",
         x1: sx(0), y1: sy(0), x2: sx(0), y2: sy(0),
         stroke: "#222", "stroke-width": 1.4, "stroke-dasharray": "6 4",
@@ -522,12 +558,9 @@
       const parentGroups = { genericMarkGroup, whitePointGroup, coloredGroup };
       for (const p of points) drawPoint(p, parentGroups);
 
-      const hitLayer = add("rect", {
+      const hitLayer = add("circle", {
         id: "hit-layer",
-        x: sx(-rMax),
-        y: sy(rMax),
-        width: sx(rMax) - sx(-rMax),
-        height: sy(-rMax) - sy(rMax),
+        cx: sx(0), cy: sy(0), r: circleRadiusPx,
         fill: "transparent",
         stroke: "none",
         "pointer-events": "all",
@@ -551,7 +584,6 @@
       const r = Math.hypot(u, v);
       const relationLine = getRelationLine();
       if (!relationLine || r === 0) return;
-
       const tMax = rMax / r;
       const end = polarWarpUV(u * tMax, v * tMax);
       relationLine.setAttribute("x1", sx(0));
@@ -591,15 +623,10 @@
     function handlePointerDown(event) {
       event.preventDefault();
       event.stopPropagation();
-
       pointerIsDown = true;
       interactionToken += 1;
       capturedPointerId = event.pointerId;
-
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch (_) {}
-
+      try { event.currentTarget.setPointerCapture(event.pointerId); } catch (_) {}
       void startNearestSoundFromEvent(event, interactionToken);
     }
 
@@ -615,14 +642,12 @@
       event.stopPropagation();
       pointerIsDown = false;
       interactionToken += 1;
-
       try {
         if (capturedPointerId !== null && event.currentTarget.hasPointerCapture(capturedPointerId)) {
           event.currentTarget.releasePointerCapture(capturedPointerId);
         }
       } catch (_) {}
       capturedPointerId = null;
-
       stopSound();
     }
 
@@ -635,30 +660,25 @@
     async function startSound(m, n, token) {
       const key = `${m},${n}`;
       if (active && active.key === key) return;
-
       const ctx = await ensureAudioContext();
       if (!pointerIsDown || token !== interactionToken) return;
-
       stopSound();
 
       const now = ctx.currentTime;
       const ratio = n / m;
       const baseHz = getBaseFrequencyHz();
       const frequency = baseHz * ratio;
-
       const reduced = reducedPair(m, n);
       const height = reduced.m * reduced.n;
       const tennyNorm = Math.log2(height);
       const { u, v } = uvFromMN(m, n);
       const r = Math.hypot(u, v);
-      const theta = Math.atan2(v, u);
-      const thetaPrimeDeg = 4 * theta * 180 / Math.PI;
+      const thetaPrimeDeg = normalizeAngleRad(4 * Math.atan2(v, u)) * 180 / Math.PI;
       const warped = polarWarpUV(u, v);
 
       const outputGain = ctx.createGain();
       const limiter = ctx.createDynamicsCompressor();
       const targetGain = targetGainForWaveform();
-
       outputGain.gain.setValueAtTime(0.0001, now);
       outputGain.gain.exponentialRampToValueAtTime(targetGain, now + 0.018);
       outputGain.connect(limiter);
@@ -678,7 +698,7 @@
         `<div>(m,n) = (${m},${n})</div>` +
         `<div>(u,v) = (${u},${v})</div>` +
         `<div>(r,θ′) = (${r.toFixed(3)}, ${thetaPrimeDeg.toFixed(2)}°)</div>` +
-        `<div>(x,y) = (${warped.x.toFixed(3)},${warped.y.toFixed(3)})</div>` +
+        `<div>(x,y) = (${warped.x.toFixed(3)}, ${warped.y.toFixed(3)})</div>` +
         `<div>ratio = ${reduced.m}:${reduced.n} = ${ratio.toFixed(5)}</div>` +
         `<div>Benedetti height = ${height}</div>` +
         `<div>Benedetti height (Tenny norm) = ${tennyNorm.toFixed(3)}</div>` +
@@ -691,26 +711,21 @@
         hideRelationLine();
         return;
       }
-
       const { ctx, outputGain, limiter, osc1, osc2 } = active;
       const now = ctx.currentTime;
-
       try {
         outputGain.gain.cancelScheduledValues(now);
         outputGain.gain.setValueAtTime(Math.max(outputGain.gain.value, 0.0001), now);
         outputGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
       } catch (_) {}
-
       try { osc1.stop(now + 0.035); } catch (_) {}
       try { osc2.stop(now + 0.035); } catch (_) {}
-
       setTimeout(() => {
         try { osc1.disconnect(); } catch (_) {}
         try { osc2.disconnect(); } catch (_) {}
         try { outputGain.disconnect(); } catch (_) {}
         try { limiter.disconnect(); } catch (_) {}
       }, 90);
-
       active = null;
       hideRelationLine();
     }
@@ -722,13 +737,19 @@
       stopSound();
     }
 
+    function redrawChart() {
+      stopInteraction();
+      drawChart();
+    }
+
     chartPanel.addEventListener("contextmenu", (event) => event.preventDefault());
     document.addEventListener("pointerup", stopInteraction, { passive: false });
     document.addEventListener("pointercancel", stopInteraction, { passive: false });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) stopInteraction();
-    });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stopInteraction(); });
     window.addEventListener("blur", stopInteraction);
+
+    kappaInput.addEventListener('input', redrawChart);
+    kappaInput.addEventListener('change', redrawChart);
 
     drawLegend();
     drawChart();
