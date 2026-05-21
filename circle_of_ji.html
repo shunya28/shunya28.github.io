@@ -326,10 +326,10 @@
 
     function targetGainForWaveform() {
       const waveform = getWaveformType();
-      if (waveform === "square") return 0.035;
-      if (waveform === "sawtooth") return 0.032;
-      if (waveform === "triangle") return 0.065;
-      return 0.075;
+      if (waveform === "square") return 0.05;
+      if (waveform === "sawtooth") return 0.08;
+      if (waveform === "triangle") return 0.35;
+      return 0.4;
     }
 
     function normalizeAngleRad(a) {
