@@ -141,6 +141,16 @@
         flex: none;
         width: 100%;
         max-width: none;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .side-panel h2:nth-of-type(1) { order: 3; }
+      #legend-list { order: 4; }
+      .side-panel h2:nth-of-type(2) { order: 1; }
+      #selected-info {
+        order: 2;
+        margin-bottom: 22px;
       }
       .legend-list {
         grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
