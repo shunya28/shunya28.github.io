@@ -2,9 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Circle of Just Intervals</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -13,20 +21,21 @@
     }
 
     .app {
-      max-width: 1500px;
+      width: min(100%, 1500px);
       margin: 24px auto;
-      padding: 0 16px;
+      padding: 0 clamp(10px, 2vw, 18px);
     }
 
     h1 {
       margin: 0 0 8px;
-      font-size: 22px;
-      font-weight: 600;
+      font-size: clamp(20px, 3.8vw, 28px);
+      font-weight: 650;
       text-align: center;
     }
 
     .note {
-      margin: 0 0 12px;
+      margin: 0 auto 12px;
+      max-width: 1050px;
       text-align: left;
       font-size: 14px;
       color: #444;
@@ -37,6 +46,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       margin: 0 0 16px;
       font-size: 14px;
@@ -53,53 +63,150 @@
       width: 120px;
     }
 
-    .chart-wrap {
+    .visual-layout {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 24px;
       width: 100%;
-      overflow-x: auto;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 8px;
-      box-sizing: border-box;
+    }
+
+    .chart-panel {
+      flex: 1 1 820px;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+      overscroll-behavior: contain;
     }
 
     svg {
       display: block;
+      width: min(100%, 860px);
+      height: auto;
+      aspect-ratio: 1 / 1;
       background: #fff;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
       touch-action: none;
+      outline: none;
     }
 
-    .axis-label { font-size: 16px; }
-    .tick-label { font-size: 13px; fill: #333; }
-    .legend-title { font-size: 16px; font-weight: 600; }
-    .legend-text { font-size: 13px; }
-    .playable:hover { cursor: pointer; }
-
-    .status {
-      margin-top: 10px;
+    .side-panel {
+      flex: 0 0 300px;
+      max-width: 320px;
       font-size: 14px;
-      color: #222;
-      text-align: center;
-      min-height: 1.4em;
+    }
+
+    .side-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 5px;
+      margin-bottom: 22px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex: 0 0 11px;
+    }
+
+    .selected-info {
+      line-height: 1.5;
       word-break: break-word;
+      color: #222;
+      min-height: 8em;
+    }
+
+    .selected-info div {
+      margin: 0 0 3px;
+    }
+
+    .play-target:hover {
+      cursor: pointer;
+    }
+
+    @media (max-width: 850px) {
+      .app {
+        margin: 16px auto;
+        padding: 0 10px;
+      }
+
+      .note {
+        font-size: 13px;
+      }
+
+      .visual-layout {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+      }
+
+      .chart-panel {
+        width: 100%;
+        flex: none;
+      }
+
+      svg {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .side-panel {
+        flex: none;
+        width: 100%;
+        max-width: none;
+      }
+
+      .legend-list {
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        column-gap: 12px;
+        row-gap: 6px;
+      }
+
+      .legend-item {
+        white-space: normal;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <h1>Circle of Just Intervals</h1>
+
     <p class="note">
-      This app visualizes just intervals whose frequency ratios can be written as integer pairs <code>m:n</code>.<br>
-      Each mark starts from a lattice point <code>(u,v)</code> with <code>u >= 0</code>, <code>v >= 0</code>, and <code>r = sqrt(u^2+v^2) <= 30</code>.<br>
-      The lattice point is converted to the frequency ratio by <code>m = u + v</code> and <code>n = u + 2v</code>.<br>
-      To form the circular layout, the app writes <code>(u,v) = (r cosθ, r sinθ)</code> and maps the angle to <code>4θ</code>, so the displayed position is <code>(x,y) = (r cos 4θ, r sin 4θ) = (r cos θ', r sin θ')</code>.<br>
-      Click or drag on the plot to hear the base frequency together with the interval tone. For gray circles, a lighter color indicates greater harmonic complexity, measured by Benedetti height (Tenny norm).
+      This app visualizes just intervals whose frequency ratios can be written as integer pairs <code>m:n</code>.
+      Each mark starts from a lattice point <code>(u,v)</code> with <code>u >= 0</code>, <code>v >= 0</code>, and <code>r = sqrt(u^2+v^2) <= 30</code>.
+      The lattice point is converted to the frequency ratio by <code>m = u + v</code> and <code>n = u + 2v</code>.
+      To form the circular layout, the app writes <code>(u,v) = (r cosθ, r sinθ)</code> and maps the angle to <code>4θ</code>, so the displayed position is <code>(x,y) = (r cos 4θ, r sin 4θ)</code>.
+      Click or drag on the plot to hear the base frequency together with the interval tone.
+      For gray circles, a lighter color indicates greater harmonic complexity, measured by Benedetti height (Tenny norm).
     </p>
 
     <div class="controls">
       <label for="base-frequency">Base frequency</label>
-      <input id="base-frequency" type="number" min="1" step="0.01" value="261.63" />
+      <input id="base-frequency" type="number" min="1" step="0.01" value="261.63" inputmode="decimal" />
       <span>Hz</span>
       <label for="waveform-select">Timbre</label>
       <select id="waveform-select">
@@ -110,8 +217,18 @@
       </select>
     </div>
 
-    <div class="chart-wrap">
-      <svg id="chart" width="1420" height="950" role="img" aria-label="Polar-warped just-intonation lattice"></svg>
+    <div class="visual-layout">
+      <div class="chart-panel" id="chart-panel">
+        <svg id="chart" viewBox="0 0 900 900" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Circle of just intervals" tabindex="-1"></svg>
+      </div>
+
+      <aside class="side-panel" aria-label="Legend and selected point information">
+        <h2 class="side-title">Interval classes</h2>
+        <div id="legend-list" class="legend-list"></div>
+
+        <h2 class="side-title">Selected point</h2>
+        <div id="selected-info" class="selected-info">Click a mark to display information.</div>
+      </aside>
     </div>
   </div>
 
@@ -141,29 +258,28 @@
     ];
 
     const svg = document.getElementById("chart");
-    let statusEl = null;
+    const chartPanel = document.getElementById("chart-panel");
+    const selectedInfo = document.getElementById("selected-info");
+    const legendList = document.getElementById("legend-list");
     const baseFrequencyInput = document.getElementById("base-frequency");
     const waveformSelect = document.getElementById("waveform-select");
 
-    function getBaseFrequencyHz() {
-      const value = Number(baseFrequencyInput.value);
-      if (!Number.isFinite(value) || value <= 0) return defaultBaseHz;
-      return value;
-    }
-
-    const W = Number(svg.getAttribute("width"));
-    const H = Number(svg.getAttribute("height"));
-    const plotLeft = 80;
-    const plotTop = 54;
-    const plotSize = 820;
-    const legendX = plotLeft + plotSize + 54;
-    const legendY = plotTop + 24;
-
+    const W = 900;
+    const H = 900;
+    const plotLeft = 32;
+    const plotTop = 32;
+    const plotSize = 836;
     const xyMax = 31;
     const xMin = -xyMax;
     const xMax = xyMax;
     const yMin = -xyMax;
     const yMax = xyMax;
+
+    let audioCtx = null;
+    let active = null;
+    let pointerIsDown = false;
+    let interactionToken = 0;
+    let capturedPointerId = null;
 
     function sx(x) {
       return plotLeft + ((x - xMin) / (xMax - xMin)) * plotSize;
@@ -200,19 +316,6 @@
       return { x: r * Math.cos(phi), y: r * Math.sin(phi) };
     }
 
-    function add(tag, attrs = {}, parent = svg) {
-      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
-      parent.appendChild(el);
-      return el;
-    }
-
-    function addText(text, x, y, attrs = {}) {
-      const el = add("text", { x, y, ...attrs });
-      el.textContent = text;
-      return el;
-    }
-
     function reducedPair(m, n) {
       const g = gcd(m, n);
       return { m: m / g, n: n / g, g };
@@ -227,17 +330,81 @@
       return Math.log2(benedettiHeight(m, n));
     }
 
-    function attachSoundEvents(el) {
-      el.addEventListener("pointerdown", handlePointerDown);
-      el.addEventListener("pointerenter", handlePointerEnter);
-      el.addEventListener("pointerleave", handlePointerLeave);
-      el.addEventListener("pointerup", stopSound);
-      el.addEventListener("pointercancel", stopSound);
+    function add(tag, attrs = {}, parent = svg) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+      parent.appendChild(el);
+      return el;
     }
 
-    function makePlayable(el) {
-      el.classList.add("playable");
-      attachSoundEvents(el);
+    function addHtml(tag, attrs = {}, parent) {
+      const el = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+        else el.setAttribute(k, String(v));
+      }
+      parent.appendChild(el);
+      return el;
+    }
+
+    function getBaseFrequencyHz() {
+      const value = Number(baseFrequencyInput.value);
+      if (!Number.isFinite(value) || value <= 0) return defaultBaseHz;
+      return value;
+    }
+
+    function getWaveformType() {
+      const value = waveformSelect.value;
+      if (["sine", "triangle", "square", "sawtooth"].includes(value)) return value;
+      return "sine";
+    }
+
+    function targetGainForWaveform() {
+      const waveform = getWaveformType();
+      if (waveform === "square") return 0.035;
+      if (waveform === "sawtooth") return 0.032;
+      if (waveform === "triangle") return 0.065;
+      return 0.075;
+    }
+
+    const intervalByReducedRatio = new Map();
+    intervals.forEach((it, i) => {
+      intervalByReducedRatio.set(`${it.m},${it.n}`, {
+        color: colors[i],
+        name: it.name,
+        ratioText: it.ratioText,
+        semitones: it.semitones
+      });
+    });
+
+    const points = [];
+    for (let u = 0; u <= rMax; u++) {
+      for (let v = 0; v <= rMax; v++) {
+        if (u === 0 && v === 0) continue;
+        if (Math.hypot(u, v) > rMax + 1e-9) continue;
+
+        const { m, n } = mnFromUV(u, v);
+        const reduced = reducedPair(m, n);
+        if (reduced.m === 1 && reduced.n === 2) continue;
+
+        const intervalInfo = intervalByReducedRatio.get(`${reduced.m},${reduced.n}`) || null;
+        const warped = polarWarpUV(u, v);
+        points.push({ u, v, m, n, reduced, intervalInfo, x: warped.x, y: warped.y });
+      }
+    }
+
+    let maxWhitePointTennyNorm = 0;
+    for (const p of points) {
+      if (p.intervalInfo) continue;
+      if (p.reduced.g !== 1) continue;
+      maxWhitePointTennyNorm = Math.max(maxWhitePointTennyNorm, tennyNormValue(p.m, p.n));
+    }
+
+    function whitePointGray(m, n) {
+      const x = tennyNormValue(m, n);
+      const ratio = maxWhitePointTennyNorm > 0 ? x / maxWhitePointTennyNorm : 1;
+      const gray = Math.round(255 * Math.max(0, Math.min(1, ratio)));
+      return `rgb(${gray}, ${gray}, ${gray})`;
     }
 
     function pointerToXY(event) {
@@ -267,98 +434,31 @@
       return nearest;
     }
 
-    async function startNearestSoundFromEvent(event) {
-      const p = nearestPointFromEvent(event);
-      if (!p) {
-        stopSound();
-        return;
-      }
-      await startSound(p.m, p.n, event.currentTarget);
-    }
-
-    const intervalByReducedRatio = new Map();
-    intervals.forEach((it, i) => {
-      intervalByReducedRatio.set(`${it.m},${it.n}`, {
-        color: colors[i],
-        name: it.name,
-        ratioText: it.ratioText,
-        semitones: it.semitones
-      });
-    });
-
-    const points = [];
-    for (let u = 0; u <= rMax; u++) {
-      for (let v = 0; v <= rMax; v++) {
-        if (u === 0 && v === 0) continue;
-        if (Math.hypot(u, v) > rMax + 1e-9) continue;
-
-        const { m, n } = mnFromUV(u, v);
-        const reduced = reducedPair(m, n);
-        if (reduced.m === 1 && reduced.n === 2) continue;
-        const intervalInfo = intervalByReducedRatio.get(`${reduced.m},${reduced.n}`) || null;
-        const warped = polarWarpUV(u, v);
-        points.push({ u, v, m, n, reduced, intervalInfo, x: warped.x, y: warped.y });
+    function drawLegend() {
+      for (const [i, it] of intervals.entries()) {
+        const item = addHtml("div", { class: "legend-item" }, legendList);
+        addHtml("span", { class: "legend-dot", style: { backgroundColor: colors[i] } }, item);
+        const label = addHtml("span", {}, item);
+        label.textContent = `${it.semitones} st: ${it.name} = ${it.ratioText}`;
       }
     }
-
-    let maxWhitePointTennyNorm = 0;
-    for (const p of points) {
-      if (p.intervalInfo) continue;
-      if (p.reduced.g !== 1) continue;
-      maxWhitePointTennyNorm = Math.max(maxWhitePointTennyNorm, tennyNormValue(p.m, p.n));
-    }
-
-    function whitePointGray(m, n) {
-      const x = tennyNormValue(m, n);
-      const ratio = maxWhitePointTennyNorm > 0 ? x / maxWhitePointTennyNorm : 1;
-      const gray = Math.round(255 * Math.max(0, Math.min(1, ratio)));
-      return `rgb(${gray}, ${gray}, ${gray})`;
-    }
-
-    add("rect", { x: 0, y: 0, width: W, height: H, fill: "#fff" });
-
-    add("rect", {
-      x: sx(xMin), y: sy(yMax), width: plotSize, height: plotSize,
-      fill: "none", stroke: "#000", "stroke-width": 1
-    });
-
-    // Visible radial boundary r <= 30. Thin grid lines between marks are intentionally omitted.
-    add("circle", {
-      cx: sx(0), cy: sy(0), r: sx(rMax) - sx(0),
-      fill: "none", stroke: "#000", "stroke-width": 1.2
-    });
-
-
-    add("circle", {
-      cx: sx(0), cy: sy(0), r: 3,
-      fill: "#000", stroke: "none", "pointer-events": "none"
-    });
-
-    const relationLine = add("line", {
-      x1: sx(0), y1: sy(0), x2: sx(0), y2: sy(0),
-      stroke: "#222", "stroke-width": 1.4, "stroke-dasharray": "6 4",
-      visibility: "hidden", "pointer-events": "none"
-    });
-
-    const genericMarkGroup = add("g");
-    const whitePointGroup = add("g");
-    const coloredGroup = add("g");
-    const hitGroup = add("g", { "pointer-events": "all" });
 
     function drawXMark(x, y, r, stroke, strokeWidth, parent) {
       add("line", {
         x1: sx(x) - r, y1: sy(y) - r,
         x2: sx(x) + r, y2: sy(y) + r,
-        stroke, "stroke-width": strokeWidth
+        stroke, "stroke-width": strokeWidth,
+        "pointer-events": "none"
       }, parent);
       add("line", {
         x1: sx(x) - r, y1: sy(y) + r,
         x2: sx(x) + r, y2: sy(y) - r,
-        stroke, "stroke-width": strokeWidth
+        stroke, "stroke-width": strokeWidth,
+        "pointer-events": "none"
       }, parent);
     }
 
-    function drawPoint(p) {
+    function drawPoint(p, parentGroups) {
       const isColored = Boolean(p.intervalInfo);
       const isReduced = p.reduced.g === 1;
 
@@ -366,144 +466,92 @@
         const color = p.intervalInfo.color;
         const r = isReduced ? 7.2 : 5.8;
         if (isReduced) {
-          const dot = add("circle", {
+          add("circle", {
             cx: sx(p.x), cy: sy(p.y), r,
             fill: color, stroke: "#fff", "stroke-width": 1.4,
-            "data-m": p.m, "data-n": p.n
-          }, coloredGroup);
-          makePlayable(dot);
+            "pointer-events": "none"
+          }, parentGroups.coloredGroup);
         } else {
-          const mark = add("g", {}, coloredGroup);
+          const mark = add("g", { "pointer-events": "none" }, parentGroups.coloredGroup);
           drawXMark(p.x, p.y, r, color, 2.6, mark);
-          const hitArea = add("circle", {
-            cx: sx(p.x), cy: sy(p.y), r: r + 1,
-            fill: "transparent", "data-m": p.m, "data-n": p.n
-          }, mark);
-          makePlayable(hitArea);
         }
       } else if (isReduced) {
-        const dot = add("circle", {
+        add("circle", {
           cx: sx(p.x), cy: sy(p.y), r: 5.8,
           fill: whitePointGray(p.m, p.n), stroke: "#666", "stroke-width": 1.4,
-          "data-m": p.m, "data-n": p.n
-        }, whitePointGroup);
-        makePlayable(dot);
+          "pointer-events": "none"
+        }, parentGroups.whitePointGroup);
       } else {
-        const mark = add("g", {}, genericMarkGroup);
+        const mark = add("g", { "pointer-events": "none" }, parentGroups.genericMarkGroup);
         drawXMark(p.x, p.y, 5.8, "#666", 1.4, mark);
-        const hitArea = add("circle", {
-          cx: sx(p.x), cy: sy(p.y), r: 6.8,
-          fill: "transparent", "data-m": p.m, "data-n": p.n
-        }, mark);
-        makePlayable(hitArea);
       }
     }
 
-    for (const p of points) drawPoint(p);
+    function drawChart() {
+      svg.replaceChildren();
 
-    function addNearestHitLayer() {
+      add("rect", { x: 0, y: 0, width: W, height: H, fill: "#fff", "pointer-events": "none" });
+
+      add("rect", {
+        x: sx(xMin), y: sy(yMax), width: plotSize, height: plotSize,
+        fill: "none", stroke: "#000", "stroke-width": 1,
+        "pointer-events": "none"
+      });
+
+      add("circle", {
+        cx: sx(0), cy: sy(0), r: sx(rMax) - sx(0),
+        fill: "none", stroke: "#000", "stroke-width": 1.2,
+        "pointer-events": "none"
+      });
+
+      add("circle", {
+        cx: sx(0), cy: sy(0), r: 3,
+        fill: "#000", stroke: "none", "pointer-events": "none"
+      });
+
+      const relationLine = add("line", {
+        id: "relation-line",
+        x1: sx(0), y1: sy(0), x2: sx(0), y2: sy(0),
+        stroke: "#222", "stroke-width": 1.4, "stroke-dasharray": "6 4",
+        visibility: "hidden", "pointer-events": "none"
+      });
+
+      const genericMarkGroup = add("g", { "pointer-events": "none" });
+      const whitePointGroup = add("g", { "pointer-events": "none" });
+      const coloredGroup = add("g", { "pointer-events": "none" });
+      const parentGroups = { genericMarkGroup, whitePointGroup, coloredGroup };
+      for (const p of points) drawPoint(p, parentGroups);
+
       const hitLayer = add("rect", {
-        x: sx(xMin),
-        y: sy(yMax),
-        width: plotSize,
-        height: plotSize,
+        id: "hit-layer",
+        x: sx(-rMax),
+        y: sy(rMax),
+        width: sx(rMax) - sx(-rMax),
+        height: sy(-rMax) - sy(rMax),
         fill: "transparent",
         stroke: "none",
-        "pointer-events": "all"
-      }, hitGroup);
+        "pointer-events": "all",
+        class: "play-target"
+      });
 
-      hitLayer.style.cursor = "pointer";
-      hitLayer.addEventListener("pointerdown", handleNearestPointerDown);
-      hitLayer.addEventListener("pointermove", handleNearestPointerMove);
-      hitLayer.addEventListener("pointerup", stopSound);
-      hitLayer.addEventListener("pointerleave", stopSound);
-      hitLayer.addEventListener("pointercancel", stopSound);
+      hitLayer.addEventListener("pointerdown", handlePointerDown, { passive: false });
+      hitLayer.addEventListener("pointermove", handlePointerMove, { passive: false });
+      hitLayer.addEventListener("pointerup", handlePointerUp, { passive: false });
+      hitLayer.addEventListener("pointercancel", handlePointerUp, { passive: false });
+      hitLayer.addEventListener("pointerleave", handlePointerLeave, { passive: false });
+      hitLayer.addEventListener("contextmenu", (event) => event.preventDefault());
     }
 
-    addNearestHitLayer();
-
-    addText("Interval classes", legendX, legendY, { class: "legend-title" });
-    intervals.forEach((it, i) => {
-      const y = legendY + 24 + i * 22;
-      add("circle", { cx: legendX + 8, cy: y - 5, r: 5.4, fill: colors[i] });
-      addText(`${it.semitones} st: ${it.name} = ${it.ratioText}`, legendX + 24, y, { class: "legend-text" });
-    });
-
-    const infoY = legendY + 24 + (intervals.length + 1) * 22;
-    addText("Selected point", legendX, infoY, { class: "legend-title" });
-    const infoObject = add("foreignObject", {
-      x: legendX,
-      y: infoY + 12,
-      width: W - legendX - 24,
-      height: 220
-    });
-    statusEl = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
-    statusEl.setAttribute("id", "status");
-    statusEl.setAttribute("class", "status");
-    statusEl.style.marginTop = "0";
-    statusEl.style.textAlign = "left";
-    statusEl.style.lineHeight = "1.5";
-    statusEl.textContent = "Click a mark to display information.";
-    infoObject.appendChild(statusEl);
-
-    let audioCtx = null;
-    let active = null;
-
-    async function ensureAudioContext() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === "suspended") await audioCtx.resume();
-      return audioCtx;
-    }
-
-    function getWaveformType() {
-      const value = waveformSelect.value;
-      if (["sine", "triangle", "square", "sawtooth"].includes(value)) return value;
-      return "sine";
-    }
-
-    function createToneOscillator(ctx, frequencyHz, startTime) {
-      const osc = ctx.createOscillator();
-      osc.type = getWaveformType();
-      osc.frequency.setValueAtTime(frequencyHz, startTime);
-      return osc;
-    }
-
-    async function handlePointerDown(event) {
-      event.preventDefault();
-      const m = Number(event.currentTarget.dataset.m);
-      const n = Number(event.currentTarget.dataset.n);
-      await startSound(m, n, event.currentTarget);
-    }
-
-    async function handleNearestPointerDown(event) {
-      event.preventDefault();
-      await startNearestSoundFromEvent(event);
-    }
-
-    async function handleNearestPointerMove(event) {
-      if ((event.buttons & 1) !== 1) return;
-      event.preventDefault();
-      await startNearestSoundFromEvent(event);
-    }
-
-    async function handlePointerEnter(event) {
-      if ((event.buttons & 1) !== 1) return;
-      const m = Number(event.currentTarget.dataset.m);
-      const n = Number(event.currentTarget.dataset.n);
-      await startSound(m, n, event.currentTarget);
-    }
-
-    function handlePointerLeave(event) {
-      if (active && active.sourceElement === event.currentTarget) stopSound();
+    function getRelationLine() {
+      return document.getElementById("relation-line");
     }
 
     function showRelationLine(m, n) {
       const { u, v } = uvFromMN(m, n);
       const r = Math.hypot(u, v);
-      if (r === 0) {
-        relationLine.setAttribute("visibility", "hidden");
-        return;
-      }
+      const relationLine = getRelationLine();
+      if (!relationLine || r === 0) return;
+
       const tMax = rMax / r;
       const end = polarWarpUV(u * tMax, v * tMax);
       relationLine.setAttribute("x1", sx(0));
@@ -514,14 +562,85 @@
     }
 
     function hideRelationLine() {
-      relationLine.setAttribute("visibility", "hidden");
+      const relationLine = getRelationLine();
+      if (relationLine) relationLine.setAttribute("visibility", "hidden");
     }
 
-    async function startSound(m, n, sourceElement) {
+    async function ensureAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+      return audioCtx;
+    }
+
+    function createToneOscillator(ctx, frequencyHz, startTime) {
+      const osc = ctx.createOscillator();
+      osc.type = getWaveformType();
+      osc.frequency.setValueAtTime(frequencyHz, startTime);
+      return osc;
+    }
+
+    async function startNearestSoundFromEvent(event, token) {
+      const p = nearestPointFromEvent(event);
+      if (!p) {
+        stopSound();
+        return;
+      }
+      await startSound(p.m, p.n, token);
+    }
+
+    function handlePointerDown(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      pointerIsDown = true;
+      interactionToken += 1;
+      capturedPointerId = event.pointerId;
+
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch (_) {}
+
+      void startNearestSoundFromEvent(event, interactionToken);
+    }
+
+    function handlePointerMove(event) {
+      if (!pointerIsDown) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void startNearestSoundFromEvent(event, interactionToken);
+    }
+
+    function handlePointerUp(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      pointerIsDown = false;
+      interactionToken += 1;
+
+      try {
+        if (capturedPointerId !== null && event.currentTarget.hasPointerCapture(capturedPointerId)) {
+          event.currentTarget.releasePointerCapture(capturedPointerId);
+        }
+      } catch (_) {}
+      capturedPointerId = null;
+
+      stopSound();
+    }
+
+    function handlePointerLeave(event) {
+      if (!pointerIsDown) return;
+      event.preventDefault();
+      stopSound();
+    }
+
+    async function startSound(m, n, token) {
       const key = `${m},${n}`;
       if (active && active.key === key) return;
-      stopSound();
+
       const ctx = await ensureAudioContext();
+      if (!pointerIsDown || token !== interactionToken) return;
+
+      stopSound();
+
       const now = ctx.currentTime;
       const ratio = n / m;
       const baseHz = getBaseFrequencyHz();
@@ -537,9 +656,13 @@
       const warped = polarWarpUV(u, v);
 
       const outputGain = ctx.createGain();
+      const limiter = ctx.createDynamicsCompressor();
+      const targetGain = targetGainForWaveform();
+
       outputGain.gain.setValueAtTime(0.0001, now);
-      outputGain.gain.exponentialRampToValueAtTime(0.14, now + 0.02);
-      outputGain.connect(ctx.destination);
+      outputGain.gain.exponentialRampToValueAtTime(targetGain, now + 0.018);
+      outputGain.connect(limiter);
+      limiter.connect(ctx.destination);
 
       const osc1 = createToneOscillator(ctx, baseHz, now);
       const osc2 = createToneOscillator(ctx, frequency, now);
@@ -548,10 +671,10 @@
       osc1.start(now);
       osc2.start(now);
 
-      active = { ctx, outputGain, osc1, osc2, sourceElement, key };
+      active = { ctx, outputGain, limiter, osc1, osc2, key };
       showRelationLine(m, n);
 
-      statusEl.innerHTML =
+      selectedInfo.innerHTML =
         `<div>(m,n) = (${m},${n})</div>` +
         `<div>(u,v) = (${u},${v})</div>` +
         `<div>(r,θ′) = (${r.toFixed(3)}, ${thetaPrimeDeg.toFixed(2)}°)</div>` +
@@ -564,21 +687,51 @@
     }
 
     function stopSound() {
-      if (!active) return;
-      const { ctx, outputGain, osc1, osc2 } = active;
+      if (!active) {
+        hideRelationLine();
+        return;
+      }
+
+      const { ctx, outputGain, limiter, osc1, osc2 } = active;
       const now = ctx.currentTime;
-      outputGain.gain.cancelScheduledValues(now);
-      outputGain.gain.setValueAtTime(Math.max(outputGain.gain.value, 0.0001), now);
-      outputGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
-      osc1.stop(now + 0.04);
-      osc2.stop(now + 0.04);
+
+      try {
+        outputGain.gain.cancelScheduledValues(now);
+        outputGain.gain.setValueAtTime(Math.max(outputGain.gain.value, 0.0001), now);
+        outputGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+      } catch (_) {}
+
+      try { osc1.stop(now + 0.035); } catch (_) {}
+      try { osc2.stop(now + 0.035); } catch (_) {}
+
+      setTimeout(() => {
+        try { osc1.disconnect(); } catch (_) {}
+        try { osc2.disconnect(); } catch (_) {}
+        try { outputGain.disconnect(); } catch (_) {}
+        try { limiter.disconnect(); } catch (_) {}
+      }, 90);
+
       active = null;
       hideRelationLine();
     }
 
-    window.addEventListener("pointerup", stopSound);
-    window.addEventListener("blur", stopSound);
+    function stopInteraction() {
+      pointerIsDown = false;
+      interactionToken += 1;
+      capturedPointerId = null;
+      stopSound();
+    }
+
+    chartPanel.addEventListener("contextmenu", (event) => event.preventDefault());
+    document.addEventListener("pointerup", stopInteraction, { passive: false });
+    document.addEventListener("pointercancel", stopInteraction, { passive: false });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopInteraction();
+    });
+    window.addEventListener("blur", stopInteraction);
+
+    drawLegend();
+    drawChart();
   </script>
 </body>
 </html>
-
