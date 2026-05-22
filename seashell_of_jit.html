@@ -125,6 +125,15 @@
         background: #fff;
         cursor: grab;
         touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      #plot text {
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       #plot:active {
@@ -347,7 +356,7 @@
               </label>
               <label>
                 Zoom
-                <input id="zoom" type="range" min="12" max="30" step="0.1" />
+                <input id="zoom" type="range" min="12" max="60" step="0.1" />
               </label>
               <label>
                 Max l (3 <= l <= 30)
@@ -425,6 +434,28 @@
         radiusMaxValue: document.getElementById("radius-max-value"),
         linearTransform: document.getElementById("linear-transform"),
       };
+
+      function isMobileViewport() {
+        return window.matchMedia("(max-width: 767px)").matches;
+      }
+
+      function getMarkerRadius(selected) {
+        if (!isMobileViewport()) return selected ? SELECTED_MARKER_RADIUS : MARKER_RADIUS;
+        return selected ? 9.2 : 6.8;
+      }
+
+      function getRingRadius() {
+        return isMobileViewport() ? 13.2 : SELECTED_RING_RADIUS;
+      }
+
+      function getCrossStrokeWidth(selected) {
+        if (!isMobileViewport()) return selected ? 2.1 : 1.4;
+        return selected ? 2.7 : 1.9;
+      }
+
+      function getCircleStrokeWidth() {
+        return isMobileViewport() ? 1.2 : 1;
+      }
 
       function gcd2(a, b) {
         let x = Math.abs(a);
@@ -638,7 +669,11 @@
       }
 
       function createSvgText(text, attributes) {
-        const node = createSvgElement("text", attributes);
+        const node = createSvgElement("text", {
+          "pointer-events": "none",
+          "user-select": "none",
+          ...attributes,
+        });
         node.textContent = text;
         return node;
       }
@@ -832,8 +867,8 @@
       }
 
       function createCrossMarker(point, selected, ringed) {
-        const size = selected ? SELECTED_MARKER_RADIUS : MARKER_RADIUS;
-        const strokeWidth = selected ? 2.1 : 1.4;
+        const size = getMarkerRadius(selected);
+        const strokeWidth = getCrossStrokeWidth(selected);
         const strokeColor = markerStrokeColor(point);
         const group = createSvgElement("g", { class: "marker" });
 
@@ -863,7 +898,7 @@
             createSvgElement("circle", {
               cx: point.screenX,
               cy: point.screenY,
-              r: SELECTED_RING_RADIUS,
+              r: getRingRadius(),
               fill: "none",
               stroke: "#111827",
               "stroke-width": 2,
@@ -884,10 +919,10 @@
           class: "marker",
           cx: point.screenX,
           cy: point.screenY,
-          r: selected ? SELECTED_MARKER_RADIUS : MARKER_RADIUS,
+          r: getMarkerRadius(selected),
           fill: markerColor,
           stroke: strokeColor,
-          "stroke-width": 1,
+          "stroke-width": getCircleStrokeWidth(),
         });
 
         circle.append(createTitle(makeMarkerTitle(point)));
@@ -898,7 +933,7 @@
             createSvgElement("circle", {
               cx: point.screenX,
               cy: point.screenY,
-              r: SELECTED_RING_RADIUS,
+              r: getRingRadius(),
               fill: "none",
               stroke: "#111827",
               "stroke-width": 2,
@@ -1231,6 +1266,7 @@ l <= ${getDisplayMaxL()}`;
         elements.plot.addEventListener("pointercancel", handlePointerUp);
         elements.plot.addEventListener("pointerleave", handlePointerUp);
         document.addEventListener("pointerup", handlePointerUp);
+        window.addEventListener("resize", render);
 
         elements.waveform.addEventListener("change", (event) => {
           state.waveform = event.target.value;
