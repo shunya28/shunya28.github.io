@@ -1,0 +1,1282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seashell of Just-Intonation Triads</title>
+    <style>
+      :root {
+        color: #171717;
+        background: #fafafa;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #fafafa;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .page {
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .shell {
+        width: min(100%, 1152px);
+        margin: 0 auto;
+      }
+
+      .panel {
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+      }
+
+      .hero {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 20px;
+        line-height: 1.25;
+        font-weight: 650;
+      }
+
+      h2 {
+        font-size: 16px;
+        line-height: 1.35;
+        font-weight: 650;
+      }
+
+      .intro {
+        margin-top: 8px;
+        color: #525252;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .stat {
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        background: #fafafa;
+        padding: 12px;
+      }
+
+      label + .stat {
+        margin-top: 12px;
+      }
+
+      .stat-label {
+        color: #737373;
+        font-size: 14px;
+      }
+
+      .stat-value {
+        margin-top: 2px;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .plot-panel {
+        overflow: hidden;
+        padding: 8px;
+        order: 2;
+      }
+
+      #plot {
+        display: block;
+        width: 100%;
+        aspect-ratio: 820 / 620;
+        height: auto;
+        border-radius: 12px;
+        background: #fff;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      #plot:active {
+        cursor: grabbing;
+      }
+
+      .sidebar {
+        display: contents;
+      }
+
+      .control-panel {
+        padding: 16px;
+      }
+
+      .sound-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .sound-grid label {
+        margin-top: 0;
+      }
+
+      .sound-panel {
+        margin-bottom: 16px;
+        order: 1;
+      }
+
+      .view-panel,
+      .selected-panel,
+      .mapping-panel {
+        order: 3;
+      }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        color: #404040;
+        font-size: 14px;
+      }
+
+      select,
+      input[type="number"] {
+        display: block;
+        width: 100%;
+        margin-top: 4px;
+        border: 1px solid #d4d4d4;
+        border-radius: 8px;
+        background: #fff;
+        padding: 8px 12px;
+        color: #171717;
+      }
+
+      input[type="range"] {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      .hint,
+      .empty {
+        margin-top: 12px;
+        color: #525252;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .hint {
+        color: #737373;
+        font-size: 12px;
+      }
+
+      .details {
+        margin-top: 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        background: #fafafa;
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .details-row {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        line-height: 1.5;
+      }
+
+      .details-label {
+        margin-top: 8px;
+        border-top: 1px solid #e5e5e5;
+        padding-top: 8px;
+        color: #737373;
+      }
+
+      pre {
+        margin: 12px 0 0;
+        overflow: auto;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        background: #fafafa;
+        padding: 12px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .marker {
+        cursor: pointer;
+      }
+
+      @media (min-width: 768px) {
+        .page {
+          padding: 32px;
+        }
+
+        .hero {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        .intro {
+          font-size: 16px;
+        }
+
+        .stats {
+          grid-template-columns: repeat(4, 1fr);
+        }
+
+        .sound-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr) 360px;
+        }
+
+        .plot-panel {
+          order: 0;
+        }
+
+        #plot {
+          height: min(620px, calc(100vh - 40px));
+          min-height: 420px;
+        }
+
+        .sidebar {
+          display: grid;
+          gap: 16px;
+          align-content: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="shell">
+        <header class="panel hero">
+          <h1>Seashell of Just-Intonation Triads</h1>
+          <p class="intro">
+            Each plotted point corresponds to a triad whose frequency ratio is
+            l:m:n. A point (l,m,n) in lmn space is mapped to a point (x,y,z) in
+            xyz space by x = m - l, y = n - m, and z = 2l - n. This point is
+            then mapped to spherical coordinates (r, theta, phi), and the
+            current plot is obtained by doubling theta and quadrupling phi.<br>
+            The Z' axis corresponds to the size of the interval between the
+            root and the highest note of the triad. Hue corresponds to the
+            size of the interval between the root and the second note. The
+            lightness of the color corresponds to the complexity of the chord
+            as measured by Benedetti height (Tenny norm).
+          </p>
+        </header>
+
+        <section class="panel control-panel sound-panel">
+          <h2>Sound controls</h2>
+
+          <div class="sound-grid">
+            <label>
+              Timbre
+              <select id="waveform">
+                <option value="sine">Sine</option>
+                <option value="triangle">Triangle</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+              </select>
+            </label>
+
+            <label>
+              Root frequency / Hz
+              <input id="root-frequency" type="number" min="20" max="2000" step="0.01" />
+            </label>
+          </div>
+
+          <p class="hint">
+            Hold a circle or cross to play a triad with frequency ratio
+            l:m:n. The l component is set to the root frequency.
+          </p>
+        </section>
+
+        <main class="layout">
+          <section class="panel plot-panel">
+            <svg id="plot" viewBox="0 0 820 620" aria-label="3D projected point plot"></svg>
+          </section>
+
+          <aside class="sidebar">
+            <section class="panel control-panel view-panel">
+              <h2>View controls</h2>
+              <label>
+                Yaw
+                <input id="yaw" type="range" min="-3.14" max="3.14" step="0.01" />
+              </label>
+              <label>
+                Pitch
+                <input id="pitch" type="range" min="-2.70" max="2.70" step="0.01" />
+              </label>
+              <label>
+                Zoom
+                <input id="zoom" type="range" min="12" max="30" step="0.1" />
+              </label>
+              <label>
+                Max l (3 <= l <= 30)
+                <input id="max-l" type="number" min="3" max="30" step="1" />
+              </label>
+              <label>
+                Draw radius min: <span id="radius-min-value">0.00</span>
+                <input id="radius-min" type="range" min="0" step="0.01" />
+              </label>
+              <label>
+                Draw radius max: <span id="radius-max-value">0.00</span>
+                <input id="radius-max" type="range" min="0" step="0.01" />
+              </label>
+              <label>
+                Displayed points: <span id="point-count">0</span>
+              </label>
+            </section>
+
+            <section class="panel control-panel selected-panel">
+              <h2>Selected point</h2>
+              <div id="selected-point"></div>
+            </section>
+
+            <section class="panel control-panel mapping-panel">
+              <h2>Mapping</h2>
+              <pre id="linear-transform"></pre>
+            </section>
+          </aside>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const MIN_L = 1;
+      const DEFAULT_MAX_L = 15;
+      const MAX_ALLOWED_L = 30;
+      const WIDTH = 820;
+      const HEIGHT = 620;
+      const DEFAULT_ZOOM = 22;
+      const MIN_PITCH = -3.14;
+      const MAX_PITCH = 3.14;
+      const MARKER_RADIUS = 4.8;
+      const SELECTED_MARKER_RADIUS = 7.2;
+      const SELECTED_RING_RADIUS = 10.5;
+      const DEFAULT_ROOT_FREQUENCY = 261.63;
+      const SVG_NS = "http://www.w3.org/2000/svg";
+
+      const state = {
+        yaw: -0.75,
+        pitch: 0.55,
+        zoom: DEFAULT_ZOOM,
+        selected: null,
+        dragStart: null,
+        waveform: "sine",
+        rootFrequencyText: String(DEFAULT_ROOT_FREQUENCY),
+        maxLText: String(DEFAULT_MAX_L),
+        radiusMinText: "0",
+        radiusMaxText: "",
+        audio: null,
+      };
+
+      const elements = {
+        plot: document.getElementById("plot"),
+        pointCount: document.getElementById("point-count"),
+        selectedPoint: document.getElementById("selected-point"),
+        waveform: document.getElementById("waveform"),
+        rootFrequency: document.getElementById("root-frequency"),
+        yaw: document.getElementById("yaw"),
+        pitch: document.getElementById("pitch"),
+        zoom: document.getElementById("zoom"),
+        maxL: document.getElementById("max-l"),
+        radiusMin: document.getElementById("radius-min"),
+        radiusMinValue: document.getElementById("radius-min-value"),
+        radiusMax: document.getElementById("radius-max"),
+        radiusMaxValue: document.getElementById("radius-max-value"),
+        linearTransform: document.getElementById("linear-transform"),
+      };
+
+      function gcd2(a, b) {
+        let x = Math.abs(a);
+        let y = Math.abs(b);
+        while (y !== 0) {
+          const t = y;
+          y = x % y;
+          x = t;
+        }
+        return x;
+      }
+
+      function gcd3(a, b, c) {
+        return gcd2(gcd2(a, b), c);
+      }
+
+      function xyzToLmn(x, y, z) {
+        return {
+          l: x + y + z,
+          m: 2 * x + y + z,
+          n: 2 * x + 2 * y + z,
+        };
+      }
+
+      function markerLabel(point) {
+        return point.isPrimitive ? "circle" : "cross";
+      }
+
+      function benedettiHeight(l, m, n) {
+        return l * m * n;
+      }
+
+      function tennyNorm(l, m, n) {
+        return Math.log2(benedettiHeight(l, m, n));
+      }
+
+      function getChordFrequencies(l, m, n, rootFrequency) {
+        return {
+          fL: rootFrequency,
+          fM: rootFrequency * (m / l),
+          fN: rootFrequency * (n / l),
+        };
+      }
+
+      function getWaveformVolume(waveform) {
+        if (waveform === "sine") return 0.26;
+        if (waveform === "triangle") return 0.22;
+        return 0.16;
+      }
+
+      function rotatePoint(point, yaw, pitch) {
+        const [x, y, z] = point;
+        const cy = Math.cos(yaw);
+        const sy = Math.sin(yaw);
+        const cp = Math.cos(pitch);
+        const sp = Math.sin(pitch);
+        const x1 = cy * x + sy * y;
+        const y1 = -sy * x + cy * y;
+        const z1 = z;
+        const x2 = x1;
+        const y2 = cp * y1 - sp * z1;
+        const z2 = sp * y1 + cp * z1;
+        return [x2, y2, z2];
+      }
+
+      function project(point, yaw, pitch, zoom) {
+        const [x, y, depth] = rotatePoint(point, yaw, pitch);
+        return {
+          screenX: WIDTH / 2 + x * zoom,
+          screenY: HEIGHT / 2 - y * zoom,
+          depth,
+        };
+      }
+
+      function formatFrequency(value) {
+        return `${value.toFixed(2)} Hz`;
+      }
+
+      function sphericalAngularMap(x, y, z) {
+        const r = Math.hypot(x, y, z);
+        const theta = Math.acos(z / r);
+        const phi = Math.atan2(y, x);
+        const mappedTheta = 2 * theta;
+        const mappedPhi = 4 * phi;
+
+        return {
+          r,
+          theta,
+          phi,
+          mappedTheta,
+          mappedPhi,
+          mappedX: r * Math.sin(mappedTheta) * Math.cos(mappedPhi),
+          mappedY: r * Math.sin(mappedTheta) * Math.sin(mappedPhi),
+          mappedZ: r * Math.cos(mappedTheta),
+        };
+      }
+
+      function getRayEndpoint(point) {
+        const scale = getDisplayRadius() / point.r;
+        return [point.mappedX * scale, point.mappedY * scale, point.mappedZ * scale];
+      }
+
+      function getRootFrequency() {
+        const value = Number(state.rootFrequencyText);
+        if (!Number.isFinite(value) || value <= 0) return DEFAULT_ROOT_FREQUENCY;
+        return value;
+      }
+
+      function getDisplayMaxL() {
+        const value = Math.floor(Number(state.maxLText));
+        if (!Number.isFinite(value)) return DEFAULT_MAX_L;
+        return Math.max(3, Math.min(MAX_ALLOWED_L, value));
+      }
+
+      function getDisplayRadius() {
+        const value = Number(state.radiusMaxText);
+        if (!Number.isFinite(value) || value <= 0) return MAX_RADIUS;
+        return Math.min(value, MAX_RADIUS);
+      }
+
+      function getDisplayRadiusMin() {
+        const value = Number(state.radiusMinText);
+        if (!Number.isFinite(value) || value < 0) return 0;
+        return Math.min(value, getDisplayRadius());
+      }
+
+      function getVisiblePoints() {
+        const minRadius = getDisplayRadiusMin();
+        const maxRadius = getDisplayRadius();
+        return points.filter((point) => point.r >= minRadius - 1e-9 && point.r <= maxRadius + 1e-9);
+      }
+
+      function makePointList(maxL) {
+        const result = [];
+
+        for (let l = MIN_L + 1; l <= maxL; l += 1) {
+          for (let m = l + 1; m < 2 * l; m += 1) {
+            for (let n = m + 1; n < 2 * l; n += 1) {
+              const x = m - l;
+              const y = n - m;
+              const z = 2 * l - n;
+              const gcd = gcd3(l, m, n);
+              const isPrimitive = gcd === 1;
+              const mapped = sphericalAngularMap(x, y, z);
+
+              result.push({
+                x,
+                y,
+                z,
+                ...mapped,
+                l,
+                m,
+                n,
+                gcd,
+                isPrimitive,
+                height: benedettiHeight(l, m, n),
+                tenny: tennyNorm(l, m, n),
+              });
+            }
+          }
+        }
+
+        return result;
+      }
+
+      let points = [];
+      let MIN_TENNY = 0;
+      let MAX_TENNY = 0;
+      let MAX_RADIUS = 1;
+
+      function refreshGeneratedData(resetRadiusRange = false) {
+        points = makePointList(getDisplayMaxL());
+        MIN_TENNY = Math.min(...points.map((point) => point.tenny));
+        MAX_TENNY = Math.max(...points.map((point) => point.tenny));
+        MAX_RADIUS = Math.max(...points.map((point) => point.r));
+
+        const maxRadiusText = MAX_RADIUS.toFixed(2);
+        elements.radiusMin.max = maxRadiusText;
+        elements.radiusMax.max = maxRadiusText;
+        elements.radiusMin.min = "0";
+        elements.radiusMax.min = "0";
+
+        if (resetRadiusRange || state.radiusMaxText === "") {
+          state.radiusMaxText = maxRadiusText;
+        }
+
+        if (Number(state.radiusMaxText) > MAX_RADIUS) {
+          state.radiusMaxText = maxRadiusText;
+        }
+
+        if (Number(state.radiusMinText) > MAX_RADIUS) {
+          state.radiusMinText = maxRadiusText;
+        }
+
+        if (state.selected && !points.some((point) => isSameSourcePoint(point, state.selected))) {
+          state.selected = null;
+          stopChord();
+        }
+      }
+
+      function createSvgElement(name, attributes = {}) {
+        const node = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes).forEach(([key, value]) => {
+          node.setAttribute(key, String(value));
+        });
+        return node;
+      }
+
+      function setChildren(parent, children) {
+        parent.replaceChildren(...children);
+      }
+
+      function createSvgText(text, attributes) {
+        const node = createSvgElement("text", attributes);
+        node.textContent = text;
+        return node;
+      }
+
+      function createTitle(text) {
+        const title = createSvgElement("title");
+        title.textContent = text;
+        return title;
+      }
+
+      function createProjectedPolyline(points, attributes) {
+        return createSvgElement("polyline", {
+          ...attributes,
+          points: points.map((point) => `${point.screenX},${point.screenY}`).join(" "),
+        });
+      }
+
+      function normalizeAngle(angle) {
+        return ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      }
+
+      function phiToHue(mappedPhi) {
+        return (normalizeAngle(mappedPhi) / (2 * Math.PI)) * 360;
+      }
+
+      function tennyToLightness(tenny) {
+        const range = MAX_TENNY - MIN_TENNY;
+        const ratio = range === 0 ? 0 : Math.max(0, Math.min(1, (tenny - MIN_TENNY) / range));
+        return Math.round(ratio * 100);
+      }
+
+      function phiColor(mappedPhi, lightness) {
+        return `hsl(${phiToHue(mappedPhi).toFixed(1)} 82% ${lightness}%)`;
+      }
+
+      function pointFillColor(point) {
+        return phiColor(point.mappedPhi, tennyToLightness(point.tenny));
+      }
+
+      function markerStrokeColor(point) {
+        return phiColor(point.mappedPhi, 32);
+      }
+
+      function getSphereLines() {
+        const lines = [];
+        const radius = getDisplayRadius();
+        const steps = 96;
+        const latitudeCount = 5;
+        const longitudeCount = 12;
+
+        for (let i = 1; i <= latitudeCount; i += 1) {
+          const theta = (Math.PI * i) / (latitudeCount + 1);
+          const line = [];
+          for (let step = 0; step <= steps; step += 1) {
+            const phi = (2 * Math.PI * step) / steps;
+            line.push(
+              project(
+                [
+                  radius * Math.sin(theta) * Math.cos(phi),
+                  radius * Math.sin(theta) * Math.sin(phi),
+                  radius * Math.cos(theta),
+                ],
+                state.yaw,
+                state.pitch,
+                state.zoom,
+              ),
+            );
+          }
+          lines.push(line);
+        }
+
+        for (let i = 0; i < longitudeCount; i += 1) {
+          const phi = (2 * Math.PI * i) / longitudeCount;
+          const line = [];
+          for (let step = 0; step <= steps; step += 1) {
+            const theta = (Math.PI * step) / steps;
+            line.push(
+              project(
+                [
+                  radius * Math.sin(theta) * Math.cos(phi),
+                  radius * Math.sin(theta) * Math.sin(phi),
+                  radius * Math.cos(theta),
+                ],
+                state.yaw,
+                state.pitch,
+                state.zoom,
+              ),
+            );
+          }
+          lines.push(line);
+        }
+
+        return lines;
+      }
+
+      function getAxes() {
+        const radius = getDisplayRadius();
+        return [
+          {
+            name: "X'",
+            start: project([-radius, 0, 0], state.yaw, state.pitch, state.zoom),
+            end: project([radius, 0, 0], state.yaw, state.pitch, state.zoom),
+          },
+          {
+            name: "Y'",
+            start: project([0, -radius, 0], state.yaw, state.pitch, state.zoom),
+            end: project([0, radius, 0], state.yaw, state.pitch, state.zoom),
+          },
+          {
+            name: "Z'",
+            start: project([0, 0, -radius], state.yaw, state.pitch, state.zoom),
+            end: project([0, 0, radius], state.yaw, state.pitch, state.zoom),
+          },
+        ];
+      }
+
+      function getProjectedPoints() {
+        return getVisiblePoints()
+          .map((point) => ({
+            ...point,
+            ...project([point.mappedX, point.mappedY, point.mappedZ], state.yaw, state.pitch, state.zoom),
+          }))
+          .sort((a, b) => a.depth - b.depth);
+      }
+
+      function getSelectedRay() {
+        if (!state.selected) return null;
+
+        const start = project([0, 0, 0], state.yaw, state.pitch, state.zoom);
+        const endpoint = getRayEndpoint(state.selected);
+        const end = project(endpoint, state.yaw, state.pitch, state.zoom);
+        const clickedPoint = project(
+          [state.selected.mappedX, state.selected.mappedY, state.selected.mappedZ],
+          state.yaw,
+          state.pitch,
+          state.zoom,
+        );
+
+        return { start, end, clickedPoint, endpoint };
+      }
+
+      function isSelectedPoint(point) {
+        return state.selected && isSameSourcePoint(point, state.selected);
+      }
+
+      function isSameSourcePoint(a, b) {
+        return a.x === b.x && a.y === b.y && a.z === b.z;
+      }
+
+      function sourceRayKey(point) {
+        const divisor = gcd3(point.x, point.y, point.z);
+        return `${point.x / divisor}:${point.y / divisor}:${point.z / divisor}`;
+      }
+
+      function isPointOnSelectedRay(point) {
+        if (!state.selected) return false;
+        if (sourceRayKey(point) === sourceRayKey(state.selected)) return true;
+
+        const selectedVector = [
+          state.selected.mappedX,
+          state.selected.mappedY,
+          state.selected.mappedZ,
+        ];
+        const pointVector = [point.mappedX, point.mappedY, point.mappedZ];
+        const selectedLength = Math.hypot(...selectedVector);
+        const pointLength = Math.hypot(...pointVector);
+        if (selectedLength === 0 || pointLength === 0) return false;
+
+        const dot =
+          selectedVector[0] * pointVector[0] +
+          selectedVector[1] * pointVector[1] +
+          selectedVector[2] * pointVector[2];
+        if (dot <= 0) return false;
+
+        const crossX = selectedVector[1] * pointVector[2] - selectedVector[2] * pointVector[1];
+        const crossY = selectedVector[2] * pointVector[0] - selectedVector[0] * pointVector[2];
+        const crossZ = selectedVector[0] * pointVector[1] - selectedVector[1] * pointVector[0];
+        const crossLength = Math.hypot(crossX, crossY, crossZ);
+        return crossLength / (selectedLength * pointLength) < 1e-7;
+      }
+
+      function makeMarkerTitle(point) {
+        return (
+          `(x, y, z)=(${point.x}, ${point.y}, ${point.z}) | ` +
+          `(X', Y', Z')=(${point.mappedX.toFixed(3)}, ${point.mappedY.toFixed(3)}, ${point.mappedZ.toFixed(3)}) | ` +
+          `(r, theta', phi')=(${point.r.toFixed(3)}, ${point.mappedTheta.toFixed(3)}, ${point.mappedPhi.toFixed(3)}) | ` +
+          `(l, m, n)=(${point.l}, ${point.m}, ${point.n}) | ` +
+          `gcd=${point.gcd} | Tenny=${point.tenny.toFixed(4)} | ` +
+          `marker=${markerLabel(point)}`
+        );
+      }
+
+      function createCrossMarker(point, selected, ringed) {
+        const size = selected ? SELECTED_MARKER_RADIUS : MARKER_RADIUS;
+        const strokeWidth = selected ? 2.1 : 1.4;
+        const strokeColor = markerStrokeColor(point);
+        const group = createSvgElement("g", { class: "marker" });
+
+        group.append(
+          createSvgElement("line", {
+            x1: point.screenX - size,
+            y1: point.screenY - size,
+            x2: point.screenX + size,
+            y2: point.screenY + size,
+            stroke: strokeColor,
+            "stroke-width": strokeWidth,
+            "stroke-linecap": "round",
+          }),
+          createSvgElement("line", {
+            x1: point.screenX - size,
+            y1: point.screenY + size,
+            x2: point.screenX + size,
+            y2: point.screenY - size,
+            stroke: strokeColor,
+            "stroke-width": strokeWidth,
+            "stroke-linecap": "round",
+          }),
+        );
+
+        if (ringed) {
+          group.append(
+            createSvgElement("circle", {
+              cx: point.screenX,
+              cy: point.screenY,
+              r: SELECTED_RING_RADIUS,
+              fill: "none",
+              stroke: "#111827",
+              "stroke-width": 2,
+            }),
+          );
+        }
+
+        group.append(createTitle(makeMarkerTitle(point)));
+        group.addEventListener("pointerdown", (event) => handleMarkerPointerDown(event, point));
+        return group;
+      }
+
+      function createCircleMarker(point, selected, ringed) {
+        const markerColor = pointFillColor(point);
+        const strokeColor = markerStrokeColor(point);
+        const group = createSvgElement("g", { class: "marker" });
+        const circle = createSvgElement("circle", {
+          class: "marker",
+          cx: point.screenX,
+          cy: point.screenY,
+          r: selected ? SELECTED_MARKER_RADIUS : MARKER_RADIUS,
+          fill: markerColor,
+          stroke: strokeColor,
+          "stroke-width": 1,
+        });
+
+        circle.append(createTitle(makeMarkerTitle(point)));
+        group.append(circle);
+
+        if (ringed) {
+          group.append(
+            createSvgElement("circle", {
+              cx: point.screenX,
+              cy: point.screenY,
+              r: SELECTED_RING_RADIUS,
+              fill: "none",
+              stroke: "#111827",
+              "stroke-width": 2,
+            }),
+          );
+        }
+
+        group.addEventListener("pointerdown", (event) => handleMarkerPointerDown(event, point));
+        return group;
+      }
+
+      function renderPlot() {
+        const sphereRadius = getDisplayRadius() * state.zoom;
+        const children = [
+          createSvgElement("rect", {
+            x: 0,
+            y: 0,
+            width: WIDTH,
+            height: HEIGHT,
+            fill: "white",
+          }),
+          createSvgElement("circle", {
+            cx: WIDTH / 2,
+            cy: HEIGHT / 2,
+            r: sphereRadius,
+            fill: "#f8fafc",
+            "fill-opacity": 0.52,
+            stroke: "#94a3b8",
+            "stroke-width": 1.8,
+          }),
+        ];
+
+        getSphereLines().forEach((line) => {
+          children.push(
+            createProjectedPolyline(line, {
+              fill: "none",
+              stroke: "#e5e5e5",
+              "stroke-width": 1,
+            }),
+          );
+        });
+
+        getAxes().forEach((axis) => {
+          const group = createSvgElement("g");
+          group.append(
+            createSvgElement("line", {
+              x1: axis.start.screenX,
+              y1: axis.start.screenY,
+              x2: axis.end.screenX,
+              y2: axis.end.screenY,
+              stroke: "#525252",
+              "stroke-width": 2.2,
+            }),
+            createSvgText(axis.name, {
+              x: axis.end.screenX + 8,
+              y: axis.end.screenY - 8,
+              "font-size": 13,
+              "font-weight": 700,
+              fill: "#262626",
+            }),
+          );
+          children.push(group);
+        });
+
+        const selectedRay = getSelectedRay();
+        if (selectedRay) {
+          const group = createSvgElement("g");
+          const originCircle = createSvgElement("circle", {
+            cx: selectedRay.start.screenX,
+            cy: selectedRay.start.screenY,
+            r: 4.5,
+            fill: "white",
+            stroke: "#111827",
+            "stroke-width": 2,
+          });
+
+          originCircle.append(createTitle("Origin O = (0, 0, 0)"));
+          group.append(
+            createSvgElement("line", {
+              x1: selectedRay.start.screenX,
+              y1: selectedRay.start.screenY,
+              x2: selectedRay.end.screenX,
+              y2: selectedRay.end.screenY,
+              stroke: "#111827",
+              "stroke-width": 2.4,
+              "stroke-dasharray": "7 6",
+              "stroke-linecap": "round",
+            }),
+            originCircle,
+            createSvgText("O", {
+              x: selectedRay.start.screenX + 7,
+              y: selectedRay.start.screenY - 7,
+              "font-size": 13,
+              "font-weight": 700,
+              fill: "#111827",
+            }),
+          );
+          children.push(group);
+        }
+
+        getProjectedPoints().forEach((point) => {
+          const selected = isSelectedPoint(point);
+          const ringed = selected || isPointOnSelectedRay(point);
+          children.push(
+            point.isPrimitive
+              ? createCircleMarker(point, selected, ringed)
+              : createCrossMarker(point, selected, ringed),
+          );
+        });
+
+        setChildren(elements.plot, children);
+      }
+
+      function renderSelectedPoint() {
+        if (!state.selected) {
+          elements.selectedPoint.innerHTML =
+            '<p class="empty">Click and hold a circle or cross to play the corresponding triad, inspect its data, and draw ray Ow&apos; in the mapped sphere.</p>';
+          return;
+        }
+
+        const selected = state.selected;
+        elements.selectedPoint.innerHTML = "";
+
+        const details = document.createElement("div");
+        details.className = "details";
+
+        [
+          `(l, m, n) = (${selected.l}, ${selected.m}, ${selected.n})`,
+          `(x, y, z) = (${selected.x}, ${selected.y}, ${selected.z})`,
+          `(r, θ, φ) = (${selected.r.toFixed(4)}, ${selected.theta.toFixed(4)}, ${selected.phi.toFixed(4)})`,
+          `(r, θ', φ') = (${selected.r.toFixed(4)}, ${selected.mappedTheta.toFixed(4)}, ${selected.mappedPhi.toFixed(4)})`,
+          `(X', Y', Z') = (${selected.mappedX.toFixed(4)}, ${selected.mappedY.toFixed(4)}, ${selected.mappedZ.toFixed(4)})`,
+        ].forEach((text) => details.append(createDetailRow(text)));
+
+        details.append(
+          createDetailLabel("Benedetti height"),
+          createDetailRow(`l x m x n = ${selected.height}`),
+          createDetailRow(`log2(l x m x n) = ${selected.tenny.toFixed(4)}`),
+          createDetailLabel("Chord frequencies"),
+          createDetailRow(`f(l) = ${formatFrequency(selected.frequencies.fL)}`),
+          createDetailRow(`f(m) = ${formatFrequency(selected.frequencies.fM)}`),
+          createDetailRow(`f(n) = ${formatFrequency(selected.frequencies.fN)}`),
+        );
+
+        elements.selectedPoint.append(details);
+      }
+
+      function createDetailRow(text) {
+        const row = document.createElement("div");
+        row.className = "details-row";
+        row.textContent = text;
+        return row;
+      }
+
+      function createDetailLabel(text) {
+        const label = document.createElement("div");
+        label.className = "details-label";
+        label.textContent = text;
+        return label;
+      }
+
+      function renderControls() {
+        elements.waveform.value = state.waveform;
+        elements.rootFrequency.value = state.rootFrequencyText;
+        elements.yaw.value = String(state.yaw);
+        elements.pitch.value = String(state.pitch);
+        elements.zoom.value = String(state.zoom);
+        elements.maxL.value = state.maxLText;
+        elements.radiusMin.value = state.radiusMinText;
+        elements.radiusMax.value = state.radiusMaxText;
+        elements.radiusMinValue.textContent = getDisplayRadiusMin().toFixed(2);
+        elements.radiusMaxValue.textContent = getDisplayRadius().toFixed(2);
+      }
+
+      function renderRangeStats() {
+        elements.pointCount.textContent = String(getVisiblePoints().length);
+      }
+
+      function renderStaticText() {
+        elements.linearTransform.textContent = `Source coordinates:
+x = m - l
+y = n - m
+z = 2l - n
+
+[x]   [-1  1  0] [l]
+[y] = [ 0 -1  1] [m]
+[z]   [ 2  0 -1] [n]
+
+Inverse map:
+l = x + y + z
+m = 2x + y + z
+n = 2x + 2y + z
+
+Spherical source:
+r = sqrt(x^2 + y^2 + z^2)
+theta = acos(z / r)
+phi = atan2(y, x)
+
+Angular map:
+(r, theta, phi) -> (r, 2theta, 4phi)
+
+Mapped coordinates:
+X' = r sin(2theta) cos(4phi)
+Y' = r sin(2theta) sin(4phi)
+Z' = r cos(2theta)
+
+This app samples:
+${MIN_L} < l < m < n < 2l
+l,m,n are natural numbers
+l <= ${getDisplayMaxL()}`;
+      }
+
+      function render() {
+        renderControls();
+        renderRangeStats();
+        renderSelectedPoint();
+        renderPlot();
+      }
+
+      function stopChord() {
+        const current = state.audio;
+        if (!current) return;
+
+        const now = current.context.currentTime;
+        current.masterGain.gain.cancelScheduledValues(now);
+        current.masterGain.gain.setTargetAtTime(0.0001, now, 0.025);
+
+        current.oscillators.forEach((oscillator) => {
+          try {
+            oscillator.stop(now + 0.08);
+          } catch {
+            // The oscillator may already be stopped.
+          }
+        });
+
+        const context = current.context;
+        window.setTimeout(() => {
+          if (context.state !== "closed") {
+            context.close().catch(() => {});
+          }
+        }, 150);
+
+        state.audio = null;
+      }
+
+      function startChord(point) {
+        stopChord();
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        const context = new AudioContextClass();
+        const masterGain = context.createGain();
+        const masterVolume = getWaveformVolume(state.waveform);
+        masterGain.gain.setValueAtTime(0.0001, context.currentTime);
+        masterGain.gain.linearRampToValueAtTime(masterVolume, context.currentTime + 0.03);
+        masterGain.connect(context.destination);
+
+        const frequencies = getChordFrequencies(point.l, point.m, point.n, getRootFrequency());
+        const voices = [
+          { frequency: frequencies.fL, gain: 0.34 },
+          { frequency: frequencies.fM, gain: 0.28 },
+          { frequency: frequencies.fN, gain: 0.24 },
+        ];
+
+        const oscillators = voices.map(({ frequency, gain }) => {
+          const oscillator = context.createOscillator();
+          const voiceGain = context.createGain();
+          oscillator.type = state.waveform;
+          oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+          voiceGain.gain.setValueAtTime(gain, context.currentTime);
+          oscillator.connect(voiceGain);
+          voiceGain.connect(masterGain);
+          oscillator.start();
+          return oscillator;
+        });
+
+        state.audio = { context, masterGain, oscillators };
+      }
+
+      function selectPoint(point) {
+        const rootFrequency = getRootFrequency();
+        state.selected = {
+          ...point,
+          frequencies: getChordFrequencies(point.l, point.m, point.n, rootFrequency),
+          selectedRootFrequency: rootFrequency,
+        };
+      }
+
+      function handleMarkerPointerDown(event, point) {
+        event.stopPropagation();
+        selectPoint(point);
+        startChord(point);
+        render();
+      }
+
+      function handlePointerDown(event) {
+        state.dragStart = {
+          x: event.clientX,
+          y: event.clientY,
+          yaw: state.yaw,
+          pitch: state.pitch,
+        };
+      }
+
+      function handlePointerMove(event) {
+        if (!state.dragStart) return;
+
+        const dx = event.clientX - state.dragStart.x;
+        const dy = event.clientY - state.dragStart.y;
+        state.yaw = state.dragStart.yaw + dx * 0.01;
+        state.pitch = Math.max(MIN_PITCH, Math.min(MAX_PITCH, state.dragStart.pitch + dy * 0.01));
+        render();
+      }
+
+      function handlePointerUp() {
+        state.dragStart = null;
+        stopChord();
+      }
+
+      function updateViewValue(key, value) {
+        state[key] = Number(value);
+        render();
+      }
+
+      function bindEvents() {
+        elements.plot.addEventListener("pointerdown", handlePointerDown);
+        elements.plot.addEventListener("pointermove", handlePointerMove);
+        elements.plot.addEventListener("pointerup", handlePointerUp);
+        elements.plot.addEventListener("pointercancel", handlePointerUp);
+        elements.plot.addEventListener("pointerleave", handlePointerUp);
+        document.addEventListener("pointerup", handlePointerUp);
+
+        elements.waveform.addEventListener("change", (event) => {
+          state.waveform = event.target.value;
+        });
+
+        elements.rootFrequency.addEventListener("input", (event) => {
+          state.rootFrequencyText = event.target.value;
+        });
+
+        elements.yaw.addEventListener("input", (event) => updateViewValue("yaw", event.target.value));
+        elements.pitch.addEventListener("input", (event) => updateViewValue("pitch", event.target.value));
+        elements.zoom.addEventListener("input", (event) => updateViewValue("zoom", event.target.value));
+        elements.maxL.addEventListener("input", (event) => {
+          state.maxLText = event.target.value;
+          refreshGeneratedData(true);
+          renderStaticText();
+          render();
+        });
+        elements.maxL.addEventListener("change", () => {
+          state.maxLText = String(getDisplayMaxL());
+          refreshGeneratedData(true);
+          renderStaticText();
+          render();
+        });
+        elements.radiusMin.addEventListener("input", (event) => {
+          state.radiusMinText = event.target.value;
+          if (state.selected && (state.selected.r < getDisplayRadiusMin() || state.selected.r > getDisplayRadius())) {
+            state.selected = null;
+            stopChord();
+          }
+          render();
+        });
+        elements.radiusMax.addEventListener("input", (event) => {
+          state.radiusMaxText = event.target.value;
+          if (state.selected && (state.selected.r < getDisplayRadiusMin() || state.selected.r > getDisplayRadius())) {
+            state.selected = null;
+            stopChord();
+          }
+          render();
+        });
+      }
+
+      refreshGeneratedData(true);
+      renderStaticText();
+      bindEvents();
+      render();
+    </script>
+  </body>
+</html>
