@@ -24,6 +24,16 @@
       font-weight: 650;
       text-align: center;
     }
+    .top-link {
+      margin: 0 auto 6px;
+      max-width: 1050px;
+      text-align: left;
+      font-size: 14px;
+    }
+    .top-link a {
+      color: revert;
+      text-decoration: underline;
+    }
     .note {
       margin: 0 auto 12px;
       max-width: 1050px;
@@ -43,11 +53,32 @@
       color: #222;
     }
     .controls input,
-    .controls select {
+    .controls select,
+    .controls button {
       padding: 4px 6px;
       font-size: 14px;
     }
     .controls input[type="number"] { width: 120px; }
+    .controls .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+    }
+    .controls input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+    #multi-pause-button,
+    #multi-clear-button {
+      min-width: 36px;
+      line-height: 1.2;
+    }
+    #multi-clear-button.clear-armed {
+      background: #d62728;
+      color: #fff;
+      border-color: #d62728;
+    }
     .visual-layout {
       display: flex;
       align-items: flex-start;
@@ -163,6 +194,7 @@
 </head>
 <body>
   <div class="app">
+    <div class="top-link"><a href="https://shunya28.github.io/chord_tester.html" target="_blank" rel="noopener noreferrer">Chord Tester</a></div>
     <h1>Circle of Just Intervals</h1>
 
     <p class="note">
@@ -174,6 +206,7 @@
       An <code>&times;</code> mark indicates that the corresponding frequency ratio is not in lowest terms; for a ratio <code>m:n</code>, this means <code>gcd(m,n) != 1</code>.
       For gray circles, a lighter color indicates greater harmonic complexity, measured by Benedetti height (Tenny norm).
       The colored background is controlled by von Mises densities centered at the colored interval-class angles; larger <code>κ</code> makes each colored region more concentrated.
+      For <code>N</code> sounding tones with integer frequency ratio <code>x_1:x_2:...:x_N</code>, Generalized Benedetti height is <code>(x_1 x_2 ... x_N)^(1/N) / N</code>.
     </p>
 
     <div class="controls">
@@ -189,6 +222,12 @@
         <option value="square">Square</option>
         <option value="sawtooth">Sawtooth</option>
       </select>
+      <label class="checkbox-label" for="multi-select-mode">
+        <input id="multi-select-mode" type="checkbox" />
+        Simultaneous selection mode
+      </label>
+      <button id="multi-pause-button" type="button" hidden aria-label="Pause">⏸</button>
+      <button id="multi-clear-button" type="button" hidden aria-label="Clear all selected tones" title="Clear all selected tones">🗑</button>
     </div>
 
     <div class="visual-layout">
@@ -238,6 +277,9 @@
     const baseFrequencyInput = document.getElementById("base-frequency");
     const kappaInput = document.getElementById("kappa-input");
     const waveformSelect = document.getElementById("waveform-select");
+    const multiSelectModeCheckbox = document.getElementById("multi-select-mode");
+    const multiPauseButton = document.getElementById("multi-pause-button");
+    const multiClearButton = document.getElementById("multi-clear-button");
 
     const W = 900;
     const H = 900;
@@ -262,6 +304,12 @@
 
     let audioCtx = null;
     let active = null;
+    let normalRelationVisible = false;
+    const multiSelections = new Map();
+    let multiPaused = false;
+    let multiOutput = null;
+    let multiClearArmed = false;
+    let multiClearTimer = null;
     let pointerIsDown = false;
     let interactionToken = 0;
     let capturedPointerId = null;
@@ -563,6 +611,15 @@
         visibility: "hidden", "pointer-events": "none"
       });
 
+      add("line", {
+        id: "zero-angle-line",
+        x1: sx(0), y1: sy(0), x2: sx(rMax), y2: sy(0),
+        stroke: "#222", "stroke-width": 1.4, "stroke-dasharray": "6 4",
+        visibility: "hidden", "pointer-events": "none"
+      });
+
+      add("g", { id: "multi-relation-lines", "pointer-events": "none" });
+
       const genericMarkGroup = add("g", { "pointer-events": "none" });
       const whitePointGroup = add("g", { "pointer-events": "none" });
       const coloredGroup = add("g", { "pointer-events": "none" });
@@ -584,29 +641,76 @@
       hitLayer.addEventListener("pointercancel", handlePointerUp, { passive: false });
       hitLayer.addEventListener("pointerleave", handlePointerLeave, { passive: false });
       hitLayer.addEventListener("contextmenu", (event) => event.preventDefault());
+      rebuildMultiSelectionLines();
+      syncZeroAngleLineVisibility();
     }
 
     function getRelationLine() {
       return document.getElementById("relation-line");
     }
 
-    function showRelationLine(m, n) {
+    function getZeroAngleLine() {
+      return document.getElementById("zero-angle-line");
+    }
+
+    function getMultiRelationLineGroup() {
+      return document.getElementById("multi-relation-lines");
+    }
+
+    function setZeroAngleLineGeometry() {
+      const zeroAngleLine = getZeroAngleLine();
+      if (!zeroAngleLine) return;
+      zeroAngleLine.setAttribute("x1", sx(0));
+      zeroAngleLine.setAttribute("y1", sy(0));
+      zeroAngleLine.setAttribute("x2", sx(rMax));
+      zeroAngleLine.setAttribute("y2", sy(0));
+    }
+
+    function syncZeroAngleLineVisibility() {
+      const zeroAngleLine = getZeroAngleLine();
+      if (!zeroAngleLine) return;
+      setZeroAngleLineGeometry();
+      const shouldShow = normalRelationVisible;
+      zeroAngleLine.setAttribute("visibility", shouldShow ? "visible" : "hidden");
+    }
+
+    function createRelationLineElement(m, n, id, parent) {
       const { u, v } = uvFromMN(m, n);
       const r = Math.hypot(u, v);
-      const relationLine = getRelationLine();
-      if (!relationLine || r === 0) return;
+      if (r === 0 || !parent) return null;
       const tMax = rMax / r;
       const end = polarWarpUV(u * tMax, v * tMax);
-      relationLine.setAttribute("x1", sx(0));
-      relationLine.setAttribute("y1", sy(0));
-      relationLine.setAttribute("x2", sx(end.x));
-      relationLine.setAttribute("y2", sy(end.y));
+      const attrs = {
+        x1: sx(0), y1: sy(0),
+        x2: sx(end.x), y2: sy(end.y),
+        stroke: "#222", "stroke-width": 1.4, "stroke-dasharray": "6 4",
+        "pointer-events": "none"
+      };
+      if (id) attrs.id = id;
+      return add("line", attrs, parent);
+    }
+
+    function showRelationLine(m, n) {
+      const relationLine = getRelationLine();
+      if (!relationLine) return;
+      const parent = relationLine.parentNode || svg;
+      const tempLine = createRelationLineElement(m, n, null, parent);
+      if (!tempLine) return;
+      relationLine.setAttribute("x1", tempLine.getAttribute("x1"));
+      relationLine.setAttribute("y1", tempLine.getAttribute("y1"));
+      relationLine.setAttribute("x2", tempLine.getAttribute("x2"));
+      relationLine.setAttribute("y2", tempLine.getAttribute("y2"));
+      tempLine.remove();
       relationLine.setAttribute("visibility", "visible");
+      normalRelationVisible = true;
+      syncZeroAngleLineVisibility();
     }
 
     function hideRelationLine() {
       const relationLine = getRelationLine();
       if (relationLine) relationLine.setAttribute("visibility", "hidden");
+      normalRelationVisible = false;
+      syncZeroAngleLineVisibility();
     }
 
     async function ensureAudioContext() {
@@ -622,6 +726,339 @@
       return osc;
     }
 
+    function isSimultaneousMode() {
+      return multiSelectModeCheckbox.checked;
+    }
+
+    function pitchKeyFromMN(m, n) {
+      const reduced = reducedPair(m, n);
+      return `${reduced.m},${reduced.n}`;
+    }
+
+    function gcdMany(values) {
+      return values.reduce((acc, value) => gcd(acc, value), 0);
+    }
+
+    function lcm(a, b) {
+      if (a === 0 || b === 0) return 0;
+      return Math.abs(a * b) / gcd(a, b);
+    }
+
+    function lcmMany(values) {
+      return values.reduce((acc, value) => lcm(acc, value), 1);
+    }
+
+    function sortedMultiSelections() {
+      return Array.from(multiSelections.values()).sort((a, b) => {
+        if (a.frequency !== b.frequency) return a.frequency - b.frequency;
+        if (a.reducedN !== b.reducedN) return a.reducedN - b.reducedN;
+        return a.reducedM - b.reducedM;
+      });
+    }
+
+    function combinedFrequencyRatioValues(selections = null) {
+      const orderedSelections = selections || sortedMultiSelections();
+      if (orderedSelections.length === 0) return [];
+      const commonDenominator = lcmMany(orderedSelections.map((s) => s.reducedM));
+      const values = orderedSelections.map((s) => s.reducedN * (commonDenominator / s.reducedM));
+      const commonFactor = gcdMany(values);
+      return values.map((value) => value / commonFactor);
+    }
+
+    function combinedFrequencyRatioText(selections = null) {
+      const values = combinedFrequencyRatioValues(selections);
+      return values.length > 0 ? values.join(":") : "-";
+    }
+
+    function formatHeightValue(value) {
+      if (!Number.isFinite(value)) return "-";
+      if (Math.abs(value - Math.round(value)) < 1e-10) return String(Math.round(value));
+      if (Math.abs(value) >= 1000) return value.toPrecision(6);
+      return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function generalizedBenedettiHeightFromValues(values) {
+      if (!values || values.length === 0) return null;
+      const n = values.length;
+      const logProductMean = values.reduce((sum, value) => sum + Math.log(value), 0) / n;
+      return Math.exp(logProductMean) / n;
+    }
+
+    function generalizedBenedettiHeightText(selections = null) {
+      const values = combinedFrequencyRatioValues(selections);
+      const height = generalizedBenedettiHeightFromValues(values);
+      return height === null ? "-" : formatHeightValue(height);
+    }
+
+    function generalizedBenedettiHeightForPairText(m, n) {
+      const reduced = reducedPair(m, n);
+      return formatHeightValue(generalizedBenedettiHeightFromValues([reduced.m, reduced.n]));
+    }
+
+    function getMultiVoiceGainValue() {
+      const count = Math.max(1, multiSelections.size);
+      const waveformGain = targetGainForWaveform();
+      return Math.min(waveformGain, waveformGain / Math.sqrt(count));
+    }
+
+    function ensureMultiOutput(ctx) {
+      if (multiOutput && multiOutput.ctx === ctx) return multiOutput;
+      const masterGain = ctx.createGain();
+      const limiter = ctx.createDynamicsCompressor();
+      try {
+        limiter.threshold.setValueAtTime(-12, ctx.currentTime);
+        limiter.knee.setValueAtTime(30, ctx.currentTime);
+        limiter.ratio.setValueAtTime(12, ctx.currentTime);
+        limiter.attack.setValueAtTime(0.003, ctx.currentTime);
+        limiter.release.setValueAtTime(0.25, ctx.currentTime);
+      } catch (_) {}
+      masterGain.gain.setValueAtTime(0.9, ctx.currentTime);
+      masterGain.connect(limiter);
+      limiter.connect(ctx.destination);
+      multiOutput = { ctx, masterGain, limiter };
+      return multiOutput;
+    }
+
+    function updateMultiVoiceGains() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const gainValue = getMultiVoiceGainValue();
+      for (const selection of multiSelections.values()) {
+        if (!selection.gainNode) continue;
+        try {
+          selection.gainNode.gain.cancelScheduledValues(now);
+          selection.gainNode.gain.setTargetAtTime(gainValue, now, 0.015);
+        } catch (_) {}
+      }
+    }
+
+    function drawMultiRelationLine(selection) {
+      const group = getMultiRelationLineGroup();
+      if (!group) return;
+      if (selection.lineEl) selection.lineEl.remove();
+      selection.lineEl = createRelationLineElement(
+        selection.reducedM,
+        selection.reducedN,
+        `multi-relation-line-${selection.key.replace(/[^a-zA-Z0-9_-]/g, "-")}`,
+        group
+      );
+    }
+
+    function rebuildMultiSelectionLines() {
+      const group = getMultiRelationLineGroup();
+      if (!group) return;
+      group.replaceChildren();
+      for (const selection of multiSelections.values()) {
+        selection.lineEl = null;
+        drawMultiRelationLine(selection);
+      }
+    }
+
+    async function startMultiSelectionSound(selection) {
+      if (selection.oscillator || multiPaused) return;
+      const ctx = await ensureAudioContext();
+      if (!isSimultaneousMode() || multiPaused || !multiSelections.has(selection.key)) return;
+      const { masterGain } = ensureMultiOutput(ctx);
+      const now = ctx.currentTime;
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(getMultiVoiceGainValue(), now + 0.018);
+      const osc = createToneOscillator(ctx, selection.frequency, now);
+      osc.connect(gainNode);
+      gainNode.connect(masterGain);
+      osc.start(now);
+      selection.oscillator = osc;
+      selection.gainNode = gainNode;
+      updateMultiVoiceGains();
+    }
+
+    async function startAllMultiSelectionSounds() {
+      for (const selection of multiSelections.values()) {
+        await startMultiSelectionSound(selection);
+      }
+      updateMultiVoiceGains();
+    }
+
+    function stopMultiSelectionSound(selection) {
+      if (!selection.oscillator && !selection.gainNode) return;
+      const ctx = audioCtx;
+      const now = ctx ? ctx.currentTime : 0;
+      const osc = selection.oscillator;
+      const gainNode = selection.gainNode;
+      try {
+        if (gainNode && ctx) {
+          gainNode.gain.cancelScheduledValues(now);
+          gainNode.gain.setValueAtTime(Math.max(gainNode.gain.value, 0.0001), now);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+        }
+      } catch (_) {}
+      try { if (osc && ctx) osc.stop(now + 0.035); } catch (_) {}
+      setTimeout(() => {
+        try { if (osc) osc.disconnect(); } catch (_) {}
+        try { if (gainNode) gainNode.disconnect(); } catch (_) {}
+      }, 90);
+      selection.oscillator = null;
+      selection.gainNode = null;
+    }
+
+    function stopAllMultiSelectionSounds() {
+      for (const selection of multiSelections.values()) stopMultiSelectionSound(selection);
+    }
+
+    function removeMultiSelection(key) {
+      resetMultiClearButton();
+      const selection = multiSelections.get(key);
+      if (!selection) return;
+      stopMultiSelectionSound(selection);
+      if (selection.lineEl) selection.lineEl.remove();
+      multiSelections.delete(key);
+      updateMultiVoiceGains();
+      syncZeroAngleLineVisibility();
+      updateMultiSelectedInfo();
+    }
+
+    function clearMultiSelections() {
+      stopAllMultiSelectionSounds();
+      for (const selection of multiSelections.values()) {
+        if (selection.lineEl) selection.lineEl.remove();
+      }
+      multiSelections.clear();
+      try { if (multiOutput) multiOutput.masterGain.disconnect(); } catch (_) {}
+      try { if (multiOutput) multiOutput.limiter.disconnect(); } catch (_) {}
+      multiOutput = null;
+      multiPaused = false;
+      syncZeroAngleLineVisibility();
+      updateMultiPauseButton();
+      updateMultiSelectedInfo();
+    }
+
+    function resetMultiClearButton() {
+      multiClearArmed = false;
+      if (multiClearTimer !== null) {
+        clearTimeout(multiClearTimer);
+        multiClearTimer = null;
+      }
+      multiClearButton.classList.remove("clear-armed");
+      multiClearButton.setAttribute("aria-label", "Clear all selected tones");
+      multiClearButton.title = "Clear all selected tones";
+    }
+
+    function updateMultiClearButton() {
+      multiClearButton.hidden = !isSimultaneousMode();
+      if (!isSimultaneousMode()) resetMultiClearButton();
+    }
+
+    function handleMultiClearButtonClick() {
+      if (!isSimultaneousMode()) return;
+      resetMultiClearButton();
+      clearMultiSelections();
+    }
+
+    function updateMultiSelectedInfo(lastSelection = null) {
+      if (!isSimultaneousMode()) return;
+      if (multiSelections.size === 0) {
+        selectedInfo.innerHTML = "Simultaneous selection mode: Click marks to add sustained tones.";
+        return;
+      }
+      const selections = sortedMultiSelections();
+      const selectedText = selections
+        .map((s) => `${s.reducedM}:${s.reducedN}`)
+        .join(", ");
+      const frequencyText = selections
+        .map((s) => `${s.frequency.toFixed(2)} Hz`)
+        .join(", ");
+      const last = lastSelection || selections.at(-1);
+      selectedInfo.innerHTML =
+        `<div>Simultaneous selection mode: ${multiSelections.size} tone(s) selected</div>` +
+        `<div>selected ratios = ${selectedText}</div>` +
+        `<div>selected frequencies = ${frequencyText}</div>` +
+        `<div>combined frequency ratio = ${combinedFrequencyRatioText(selections)}</div>` +
+        `<div>Generalized Benedetti height = ${generalizedBenedettiHeightText(selections)}</div>` +
+        `<div>last ratio = ${last.reducedM}:${last.reducedN} = ${last.ratio.toFixed(5)}</div>` +
+        `<div>${multiPaused ? "paused" : "playing"}</div>`;
+    }
+
+    function addMultiSelectionFromPoint(p) {
+      resetMultiClearButton();
+      const reduced = reducedPair(p.m, p.n);
+      const key = `${reduced.m},${reduced.n}`;
+      const ratio = reduced.n / reduced.m;
+      const baseHz = getBaseFrequencyHz();
+      const frequency = baseHz * ratio;
+      const selection = {
+        key,
+        m: p.m,
+        n: p.n,
+        reducedM: reduced.m,
+        reducedN: reduced.n,
+        ratio,
+        frequency,
+        oscillator: null,
+        gainNode: null,
+        lineEl: null
+      };
+      multiSelections.set(key, selection);
+      drawMultiRelationLine(selection);
+      syncZeroAngleLineVisibility();
+      updateMultiSelectedInfo(selection);
+      if (!multiPaused) void startMultiSelectionSound(selection);
+    }
+
+    function toggleMultiSelectionFromEvent(event) {
+      const p = nearestPointFromEvent(event);
+      if (!p) return;
+      const key = pitchKeyFromMN(p.m, p.n);
+      if (multiSelections.has(key)) {
+        removeMultiSelection(key);
+      } else {
+        addMultiSelectionFromPoint(p);
+      }
+    }
+
+    function updateMultiPauseButton() {
+      multiPauseButton.hidden = !isSimultaneousMode();
+      multiPauseButton.textContent = multiPaused ? "▶" : "⏸";
+      multiPauseButton.setAttribute("aria-label", multiPaused ? "Play" : "Pause");
+      multiPauseButton.title = multiPaused ? "Play" : "Pause";
+    }
+
+    function handleMultiPauseButtonClick() {
+      if (!isSimultaneousMode()) return;
+      if (multiPaused) {
+        multiPaused = false;
+        void startAllMultiSelectionSounds();
+      } else {
+        multiPaused = true;
+        stopAllMultiSelectionSounds();
+      }
+      updateMultiPauseButton();
+      updateMultiSelectedInfo();
+    }
+
+    function handleSimultaneousModeChange() {
+      stopInteraction();
+      if (!isSimultaneousMode()) {
+        clearMultiSelections();
+        selectedInfo.textContent = "Click a mark to display information.";
+      } else {
+        multiPaused = false;
+        updateMultiSelectedInfo();
+      }
+      updateMultiPauseButton();
+      updateMultiClearButton();
+    }
+
+    function restartMultiSelectionsForCurrentSettings() {
+      if (!isSimultaneousMode() || multiSelections.size === 0) return;
+      const baseHz = getBaseFrequencyHz();
+      for (const selection of multiSelections.values()) {
+        selection.frequency = baseHz * selection.ratio;
+        stopMultiSelectionSound(selection);
+      }
+      if (!multiPaused) void startAllMultiSelectionSounds();
+      updateMultiSelectedInfo();
+    }
+
     async function startNearestSoundFromEvent(event, token) {
       const p = nearestPointFromEvent(event);
       if (!p) {
@@ -634,6 +1071,10 @@
     function handlePointerDown(event) {
       event.preventDefault();
       event.stopPropagation();
+      if (isSimultaneousMode()) {
+        toggleMultiSelectionFromEvent(event);
+        return;
+      }
       pointerIsDown = true;
       interactionToken += 1;
       capturedPointerId = event.pointerId;
@@ -642,6 +1083,7 @@
     }
 
     function handlePointerMove(event) {
+      if (isSimultaneousMode()) return;
       if (!pointerIsDown) return;
       event.preventDefault();
       event.stopPropagation();
@@ -651,6 +1093,7 @@
     function handlePointerUp(event) {
       event.preventDefault();
       event.stopPropagation();
+      if (isSimultaneousMode()) return;
       pointerIsDown = false;
       interactionToken += 1;
       try {
@@ -663,6 +1106,7 @@
     }
 
     function handlePointerLeave(event) {
+      if (isSimultaneousMode()) return;
       if (!pointerIsDown) return;
       event.preventDefault();
       stopSound();
@@ -713,6 +1157,7 @@
         `<div>ratio = ${reduced.m}:${reduced.n} = ${ratio.toFixed(5)}</div>` +
         `<div>Benedetti height = ${height}</div>` +
         `<div>Benedetti height (Tenny norm) = ${tennyNorm.toFixed(3)}</div>` +
+        `<div>Generalized Benedetti height = ${generalizedBenedettiHeightForPairText(m, n)}</div>` +
         `<div>base frequency = ${baseHz.toFixed(2)} Hz</div>` +
         `<div>frequency = ${frequency.toFixed(2)} Hz</div>`;
     }
@@ -761,7 +1206,14 @@
 
     kappaInput.addEventListener('input', redrawChart);
     kappaInput.addEventListener('change', redrawChart);
+    multiSelectModeCheckbox.addEventListener('change', handleSimultaneousModeChange);
+    multiPauseButton.addEventListener('click', handleMultiPauseButtonClick);
+    multiClearButton.addEventListener('click', handleMultiClearButtonClick);
+    waveformSelect.addEventListener('change', restartMultiSelectionsForCurrentSettings);
+    baseFrequencyInput.addEventListener('change', restartMultiSelectionsForCurrentSettings);
 
+    updateMultiPauseButton();
+    updateMultiClearButton();
     drawLegend();
     drawChart();
   </script>
