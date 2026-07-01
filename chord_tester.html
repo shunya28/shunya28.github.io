@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frequency Ratio Chord Tester</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #637083;
+      --border: #d8dee8;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --danger: #dc2626;
+      --danger-dark: #b91c1c;
+      --disabled: #cbd5e1;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .top-link {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .top-link a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .top-link a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      letter-spacing: -0.03em;
+    }
+
+    .description {
+      margin: 0 0 24px;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      align-items: end;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfcfe;
+      margin-bottom: 22px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 650;
+      font-size: 0.93rem;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+    }
+
+    input[type="number"]:focus,
+    select:focus,
+    button:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.22);
+      outline-offset: 2px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      min-height: 40px;
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-dark);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      background: var(--disabled);
+      color: #718096;
+      cursor: not-allowed;
+    }
+
+    #stopButton {
+      background: #475569;
+    }
+
+    #stopButton:hover:not(:disabled) {
+      background: #334155;
+    }
+
+    #addSliderButton {
+      background: #0f766e;
+    }
+
+    #addSliderButton:hover:not(:disabled) {
+      background: #115e59;
+    }
+
+    #resetButton {
+      background: #64748b;
+    }
+
+    #resetButton:hover:not(:disabled) {
+      background: #475569;
+    }
+
+    .remove-slider-button {
+      min-width: 72px;
+      padding: 8px 12px;
+      background: var(--danger);
+      line-height: 1;
+    }
+
+    .remove-slider-button:hover:not(:disabled) {
+      background: var(--danger-dark);
+    }
+
+
+    .pill {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .slider-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 96px auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .frequency-readout {
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .ratio-display {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 16px;
+      border-radius: 14px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+
+    @media (max-width: 620px) {
+      main {
+        margin: 20px auto;
+        padding: 20px;
+      }
+
+      .slider-row {
+        grid-template-columns: minmax(0, 1fr) 72px;
+        gap: 10px;
+      }
+
+      .slider-row > div:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .remove-slider-button {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 8px;
+        font-size: 0.88rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="top-link"><a href="https://shunya28.github.io/circle_of_ji.html">Circle of Just Intervals</a></p>
+    <h1>Frequency Ratio Chord Tester</h1>
+    <p class="description">
+      Set integer frequency ratios, choose a waveform, and play the resulting chord. The base frequency is assigned to the smallest ratio value, and the other tones are scaled relative to it.
+    </p>
+
+    <section class="controls" aria-label="Global controls">
+      <label>
+        Maximum ratio value
+        <input id="maxRatioInput" type="number" min="1" step="1" value="20" />
+      </label>
+
+      <label>
+        Base frequency (Hz)
+        <input id="baseFrequencyInput" type="number" min="1" step="0.01" value="261.63" />
+      </label>
+
+      <label>
+        Waveform
+        <select id="waveformSelect">
+          <option value="sine">sine</option>
+          <option value="triangle">triangle</option>
+          <option value="square">square</option>
+          <option value="sawtooth">sawtooth</option>
+        </select>
+      </label>
+
+      <div class="button-row" aria-label="Playback controls">
+        <button id="playButton" type="button">Play</button>
+        <button id="stopButton" type="button" disabled>Stop</button>
+        <button id="addSliderButton" type="button">Add slider</button>
+        <button id="resetButton" type="button">Reset</button>
+      </div>
+    </section>
+
+    <div id="ratioDisplay" class="ratio-display" aria-live="polite">
+      <span class="pill" id="generalizedBenedettiHeightText"></span>
+      <span id="ratioText"></span>
+    </div>
+
+    <section id="sliderList" class="slider-list" aria-label="Ratio sliders"></section>
+  </main>
+
+  <script>
+    (() => {
+      const maxRatioInput = document.getElementById('maxRatioInput');
+      const baseFrequencyInput = document.getElementById('baseFrequencyInput');
+      const waveformSelect = document.getElementById('waveformSelect');
+      const playButton = document.getElementById('playButton');
+      const stopButton = document.getElementById('stopButton');
+      const addSliderButton = document.getElementById('addSliderButton');
+      const resetButton = document.getElementById('resetButton');
+      const sliderList = document.getElementById('sliderList');
+      const ratioDisplay = document.getElementById('ratioDisplay');
+      const ratioText = document.getElementById('ratioText');
+      const generalizedBenedettiHeightText = document.getElementById('generalizedBenedettiHeightText');
+
+      let audioContext = null;
+      let masterGain = null;
+      let compressor = null;
+      let activeOscillators = [];
+      let activeToneGains = [];
+      let isPlaying = false;
+      let sliderIdCounter = 0;
+
+      const INITIAL_MAX_RATIO = 20;
+      const INITIAL_BASE_FREQUENCY = 261.63;
+      const INITIAL_WAVEFORM = 'sine';
+      const INITIAL_SLIDER_VALUES = [1, 1];
+
+      function toPositiveInteger(value, fallback) {
+        const number = Number.parseInt(value, 10);
+        return Number.isFinite(number) && number >= 1 ? number : fallback;
+      }
+
+      function getMaxRatio() {
+        return toPositiveInteger(maxRatioInput.value, INITIAL_MAX_RATIO);
+      }
+
+      function getBaseFrequency() {
+        const number = Number.parseFloat(baseFrequencyInput.value);
+        return Number.isFinite(number) && number > 0 ? number : INITIAL_BASE_FREQUENCY;
+      }
+
+      function getRatioValues() {
+        return [...sliderList.querySelectorAll('.ratio-number')].map(input => toPositiveInteger(input.value, 1));
+      }
+
+      function clampRatioValue(value) {
+        return Math.min(Math.max(toPositiveInteger(value, 1), 1), getMaxRatio());
+      }
+
+      function formatHz(value) {
+        return `${value.toFixed(2)} Hz`;
+      }
+
+      function formatHeight(value) {
+        if (!Number.isFinite(value)) return 'none';
+        return value.toFixed(4);
+      }
+
+      function calculateGeneralizedBenedettiHeight(values) {
+        if (!values.length) return Number.NaN;
+        const logProduct = values.reduce((sum, value) => sum + Math.log(value), 0);
+        return Math.exp(logProduct / values.length) / values.length;
+      }
+
+      function getSortedRatioValues() {
+        return [...getRatioValues()].sort((a, b) => a - b);
+      }
+
+      function updateReadouts() {
+        const baseFrequency = getBaseFrequency();
+        const values = getRatioValues();
+        const sortedValues = [...values].sort((a, b) => a - b);
+        const referenceValue = sortedValues[0] ?? 1;
+        const frequencies = values.map(value => baseFrequency * value / referenceValue);
+        const sortedFrequencies = sortedValues.map(value => baseFrequency * value / referenceValue);
+
+        sliderList.querySelectorAll('.slider-row').forEach((row, index) => {
+          const frequencyReadout = row.querySelector('.frequency-readout');
+          frequencyReadout.textContent = values.length ? `${formatHz(frequencies[index])}` : '';
+        });
+
+        const ratioValueText = sortedValues.length ? sortedValues.join(':') : 'none';
+        const frequencyText = sortedFrequencies.length ? sortedFrequencies.map(formatHz).join(', ') : 'none';
+        const generalizedBenedettiHeight = calculateGeneralizedBenedettiHeight(sortedValues);
+        generalizedBenedettiHeightText.textContent = `Generalized Benedetti height: ${formatHeight(generalizedBenedettiHeight)}`;
+        ratioText.textContent = `Current ratio: ${ratioValueText} | Frequencies: ${frequencyText}`;
+      }
+
+      function updateSliderLimits() {
+        const maxRatio = getMaxRatio();
+        maxRatioInput.value = String(maxRatio);
+
+        sliderList.querySelectorAll('.slider-row').forEach(row => {
+          const range = row.querySelector('.ratio-range');
+          const number = row.querySelector('.ratio-number');
+          const clampedValue = Math.min(toPositiveInteger(number.value, 1), maxRatio);
+
+          range.max = String(maxRatio);
+          range.value = String(clampedValue);
+          number.max = String(maxRatio);
+          number.value = String(clampedValue);
+        });
+
+        relabelSliders();
+        updateReadouts();
+        if (isPlaying) restartSound();
+      }
+
+      function syncInputs(sourceInput, targetInput) {
+        const clampedValue = clampRatioValue(sourceInput.value);
+        sourceInput.value = String(clampedValue);
+        targetInput.value = String(clampedValue);
+        updateReadouts();
+        if (isPlaying) restartSound();
+      }
+
+      function relabelSliders() {
+        const rows = [...sliderList.querySelectorAll('.slider-row')];
+        const total = rows.length;
+
+        rows.forEach((row, index) => {
+          const labelNumber = total - index;
+          const label = row.querySelector('.slider-label-main');
+          const range = row.querySelector('.ratio-range');
+          const number = row.querySelector('.ratio-number');
+          const removeButton = row.querySelector('.remove-slider-button');
+
+          label.textContent = `Ratio value ${labelNumber}`;
+          range.setAttribute('aria-label', `Ratio value ${labelNumber} slider`);
+          number.setAttribute('aria-label', `Ratio value ${labelNumber} number`);
+          removeButton.setAttribute('aria-label', `Remove ratio value ${labelNumber}`);
+          removeButton.title = `Remove ratio value ${labelNumber}`;
+        });
+      }
+
+      function removeSlider(row) {
+        row.remove();
+        relabelSliders();
+        updateReadouts();
+        if (isPlaying) restartSound();
+      }
+
+      function createSlider(initialValue = 1, insertAtTop = false) {
+        sliderIdCounter += 1;
+        const id = sliderIdCounter;
+        const value = clampRatioValue(initialValue);
+        const row = document.createElement('div');
+        row.className = 'slider-row';
+        row.dataset.sliderId = String(id);
+
+        row.innerHTML = `
+          <div>
+            <div class="slider-label">
+              <span class="slider-label-main">Ratio value</span>
+              <span class="frequency-readout"></span>
+            </div>
+            <input class="ratio-range" type="range" min="1" max="${getMaxRatio()}" step="1" value="${value}" />
+          </div>
+          <input class="ratio-number" type="number" min="1" max="${getMaxRatio()}" step="1" value="${value}" />
+          <button class="remove-slider-button" type="button">Delete</button>
+        `;
+
+        const range = row.querySelector('.ratio-range');
+        const number = row.querySelector('.ratio-number');
+        const removeButton = row.querySelector('.remove-slider-button');
+
+        range.addEventListener('input', () => syncInputs(range, number));
+        number.addEventListener('input', () => syncInputs(number, range));
+        number.addEventListener('change', () => syncInputs(number, range));
+        removeButton.addEventListener('click', () => removeSlider(row));
+
+        if (insertAtTop && sliderList.firstChild) {
+          sliderList.insertBefore(row, sliderList.firstChild);
+        } else {
+          sliderList.appendChild(row);
+        }
+
+        relabelSliders();
+        updateReadouts();
+      }
+
+      function setPlaybackState(playing) {
+        isPlaying = playing;
+        playButton.disabled = playing;
+        stopButton.disabled = !playing;
+      }
+
+      function prepareAudioGraph() {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          compressor = audioContext.createDynamicsCompressor();
+          compressor.threshold.value = -18;
+          compressor.knee.value = 18;
+          compressor.ratio.value = 8;
+          compressor.attack.value = 0.004;
+          compressor.release.value = 0.16;
+
+          masterGain = audioContext.createGain();
+          masterGain.gain.value = 0.72;
+
+          compressor.connect(masterGain);
+          masterGain.connect(audioContext.destination);
+        }
+      }
+
+      function stopSoundOnly() {
+        if (!audioContext) return;
+
+        const now = audioContext.currentTime;
+        activeToneGains.forEach(gainNode => {
+          try {
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.linearRampToValueAtTime(0, now + 0.035);
+          } catch (_) {}
+        });
+
+        activeOscillators.forEach(oscillator => {
+          try {
+            oscillator.stop(now + 0.045);
+          } catch (_) {}
+        });
+
+        activeOscillators = [];
+        activeToneGains = [];
+      }
+
+      async function playSound() {
+        prepareAudioGraph();
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        stopSoundOnly();
+
+        const values = getSortedRatioValues();
+        if (values.length === 0) {
+          stopSoundOnly();
+          setPlaybackState(false);
+          return;
+        }
+
+        const baseFrequency = getBaseFrequency();
+        const referenceValue = values[0] ?? 1;
+        const waveform = waveformSelect.value;
+        const now = audioContext.currentTime;
+        const safeGainPerTone = Math.min(0.18, 0.62 / Math.max(values.length, 1));
+
+        values.forEach(value => {
+          const oscillator = audioContext.createOscillator();
+          const toneGain = audioContext.createGain();
+
+          oscillator.type = waveform;
+          oscillator.frequency.setValueAtTime(baseFrequency * value / referenceValue, now);
+
+          toneGain.gain.setValueAtTime(0, now);
+          toneGain.gain.linearRampToValueAtTime(safeGainPerTone, now + 0.035);
+
+          oscillator.connect(toneGain);
+          toneGain.connect(compressor);
+          oscillator.start(now);
+
+          activeOscillators.push(oscillator);
+          activeToneGains.push(toneGain);
+        });
+
+        setPlaybackState(true);
+      }
+
+      function stopSound() {
+        stopSoundOnly();
+        setPlaybackState(false);
+      }
+
+      function restartSound() {
+        if (!isPlaying) return;
+        playSound();
+      }
+
+      function resetAll() {
+        stopSound();
+        maxRatioInput.value = String(INITIAL_MAX_RATIO);
+        baseFrequencyInput.value = String(INITIAL_BASE_FREQUENCY);
+        waveformSelect.value = INITIAL_WAVEFORM;
+        sliderList.innerHTML = '';
+        sliderIdCounter = 0;
+        INITIAL_SLIDER_VALUES.forEach(value => createSlider(value, false));
+        relabelSliders();
+        updateReadouts();
+        setPlaybackState(false);
+      }
+
+      maxRatioInput.addEventListener('input', updateSliderLimits);
+      maxRatioInput.addEventListener('change', updateSliderLimits);
+      baseFrequencyInput.addEventListener('input', () => {
+        const baseFrequency = getBaseFrequency();
+        baseFrequencyInput.value = String(baseFrequency);
+        updateReadouts();
+        if (isPlaying) restartSound();
+      });
+      baseFrequencyInput.addEventListener('change', () => {
+        baseFrequencyInput.value = String(getBaseFrequency());
+        updateReadouts();
+        if (isPlaying) restartSound();
+      });
+      waveformSelect.addEventListener('change', restartSound);
+      playButton.addEventListener('click', playSound);
+      stopButton.addEventListener('click', stopSound);
+      resetButton.addEventListener('click', resetAll);
+      addSliderButton.addEventListener('click', () => {
+        createSlider(1, true);
+        if (isPlaying) restartSound();
+      });
+
+      resetAll();
+    })();
+  </script>
+</body>
+</html>
